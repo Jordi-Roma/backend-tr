@@ -1,0 +1,262 @@
+from fastapi import HTTPException
+
+from app.modules.autenticacion.repositories.rol_permiso_repository import (
+    actualizar_rol,
+    activar_permiso,
+    activar_permiso_de_rol,
+    activar_rol,
+    asignar_permiso_a_rol,
+    crear_permiso,
+    crear_rol,
+    desactivar_permiso,
+    desactivar_permiso_de_rol,
+    desactivar_rol,
+    listar_permisos,
+    listar_roles,
+    obtener_permiso_por_id,
+    obtener_permiso_por_modulo_accion,
+    obtener_permiso_por_nombre,
+    obtener_rol_por_id,
+    obtener_rol_por_nombre,
+)
+from app.modules.autenticacion.schemas.rol_permiso.rol_permiso_request import (
+    ActualizarRolRequest,
+    CrearPermisoRequest,
+    CrearRolRequest,
+)
+from app.modules.autenticacion.schemas.rol_permiso.rol_permiso_response import (
+    MensajeResponse,
+    PermisoResponse,
+    RolResponse,
+)
+
+
+def obtener_roles() -> list[RolResponse]:
+    roles = listar_roles()
+    return [construir_rol_response(rol) for rol in roles]
+
+
+def registrar_rol(
+    request: CrearRolRequest,
+    usuario_actual: dict[str, object],
+) -> RolResponse:
+    nombre = request.nombre.strip().upper()
+    rol_existente = obtener_rol_por_nombre(nombre)
+
+    if rol_existente is not None:
+        raise HTTPException(status_code=409, detail="El rol ya existe.")
+
+    rol = crear_rol(nombre, request.descripcion, int(usuario_actual["id"]))
+    return construir_rol_response(rol)
+
+
+def editar_rol(
+    rol_id: int,
+    request: ActualizarRolRequest,
+    usuario_actual: dict[str, object],
+) -> RolResponse:
+    rol_actual = obtener_rol_por_id(rol_id)
+
+    if rol_actual is None or rol_actual["activo"] is not True:
+        raise HTTPException(status_code=404, detail="Rol no encontrado.")
+
+    nombre = request.nombre.strip().upper()
+    rol_repetido = obtener_rol_por_nombre(nombre)
+
+    if rol_repetido is not None and int(rol_repetido["id"]) != rol_id:
+        raise HTTPException(status_code=409, detail="El rol ya existe.")
+
+    rol = actualizar_rol(rol_id, nombre, request.descripcion, int(usuario_actual["id"]))
+
+    if rol is None:
+        raise HTTPException(status_code=404, detail="Rol no encontrado.")
+
+    return construir_rol_response(rol)
+
+
+def eliminar_rol(rol_id: int, usuario_actual: dict[str, object]) -> MensajeResponse:
+    rol = obtener_rol_por_id(rol_id)
+
+    if rol is None or rol["activo"] is not True:
+        raise HTTPException(status_code=404, detail="Rol no encontrado.")
+
+    if str(rol["nombre"]) == "ADMINISTRADOR":
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede desactivar el rol ADMINISTRADOR.",
+        )
+
+    desactivado = desactivar_rol(rol_id, int(usuario_actual["id"]))
+
+    if not desactivado:
+        raise HTTPException(status_code=404, detail="Rol no encontrado.")
+
+    return MensajeResponse(mensaje="Rol desactivado correctamente.")
+
+
+def reactivar_rol(rol_id: int, usuario_actual: dict[str, object]) -> MensajeResponse:
+    rol = obtener_rol_por_id(rol_id)
+
+    if rol is None:
+        raise HTTPException(status_code=404, detail="Rol no encontrado.")
+
+    activado = activar_rol(rol_id, int(usuario_actual["id"]))
+
+    if not activado:
+        raise HTTPException(status_code=404, detail="Rol no encontrado.")
+
+    return MensajeResponse(mensaje="Rol activado correctamente.")
+
+
+def obtener_permisos() -> list[PermisoResponse]:
+    permisos = listar_permisos()
+    return [construir_permiso_response(permiso) for permiso in permisos]
+
+
+def registrar_permiso(
+    request: CrearPermisoRequest,
+    usuario_actual: dict[str, object],
+) -> PermisoResponse:
+    nombre = request.nombre.strip().upper()
+    modulo = request.modulo.strip().upper()
+    accion = request.accion.strip().upper()
+
+    permiso_por_nombre = obtener_permiso_por_nombre(nombre)
+
+    if permiso_por_nombre is not None:
+        raise HTTPException(status_code=409, detail="El permiso ya existe.")
+
+    permiso_por_modulo_accion = obtener_permiso_por_modulo_accion(modulo, accion)
+
+    if permiso_por_modulo_accion is not None:
+        raise HTTPException(status_code=409, detail="El permiso ya existe.")
+
+    permiso = crear_permiso(
+        nombre,
+        modulo,
+        accion,
+        request.descripcion,
+        int(usuario_actual["id"]),
+    )
+    return construir_permiso_response(permiso)
+
+
+def eliminar_permiso(
+    permiso_id: int,
+    usuario_actual: dict[str, object],
+) -> MensajeResponse:
+    permiso = obtener_permiso_por_id(permiso_id)
+
+    if permiso is None or permiso["activo"] is not True:
+        raise HTTPException(status_code=404, detail="Permiso no encontrado.")
+
+    desactivado = desactivar_permiso(permiso_id, int(usuario_actual["id"]))
+
+    if not desactivado:
+        raise HTTPException(status_code=404, detail="Permiso no encontrado.")
+
+    return MensajeResponse(mensaje="Permiso desactivado correctamente.")
+
+
+def reactivar_permiso(
+    permiso_id: int,
+    usuario_actual: dict[str, object],
+) -> MensajeResponse:
+    permiso = obtener_permiso_por_id(permiso_id)
+
+    if permiso is None:
+        raise HTTPException(status_code=404, detail="Permiso no encontrado.")
+
+    activado = activar_permiso(permiso_id, int(usuario_actual["id"]))
+
+    if not activado:
+        raise HTTPException(status_code=404, detail="Permiso no encontrado.")
+
+    return MensajeResponse(mensaje="Permiso activado correctamente.")
+
+
+def asignar_permiso(
+    rol_id: int,
+    permiso_id: int,
+    usuario_actual: dict[str, object],
+) -> MensajeResponse:
+    rol = obtener_rol_por_id(rol_id)
+
+    if rol is None or rol["activo"] is not True:
+        raise HTTPException(status_code=404, detail="Rol no encontrado.")
+
+    permiso = obtener_permiso_por_id(permiso_id)
+
+    if permiso is None or permiso["activo"] is not True:
+        raise HTTPException(status_code=404, detail="Permiso no encontrado.")
+
+    asignar_permiso_a_rol(rol_id, permiso_id, int(usuario_actual["id"]))
+    return MensajeResponse(mensaje="Permiso asignado correctamente.")
+
+
+def quitar_permiso(
+    rol_id: int,
+    permiso_id: int,
+    usuario_actual: dict[str, object],
+) -> MensajeResponse:
+    rol = obtener_rol_por_id(rol_id)
+
+    if rol is None or rol["activo"] is not True:
+        raise HTTPException(status_code=404, detail="Rol no encontrado.")
+
+    permiso = obtener_permiso_por_id(permiso_id)
+
+    if permiso is None or permiso["activo"] is not True:
+        raise HTTPException(status_code=404, detail="Permiso no encontrado.")
+
+    desactivado = desactivar_permiso_de_rol(
+        rol_id,
+        permiso_id,
+        int(usuario_actual["id"]),
+    )
+
+    if not desactivado:
+        raise HTTPException(status_code=404, detail="Relacion rol-permiso no encontrada.")
+
+    return MensajeResponse(mensaje="Permiso quitado del rol correctamente.")
+
+
+def reactivar_permiso_rol(
+    rol_id: int,
+    permiso_id: int,
+    usuario_actual: dict[str, object],
+) -> MensajeResponse:
+    rol = obtener_rol_por_id(rol_id)
+
+    if rol is None or rol["activo"] is not True:
+        raise HTTPException(status_code=404, detail="Rol no encontrado.")
+
+    permiso = obtener_permiso_por_id(permiso_id)
+
+    if permiso is None or permiso["activo"] is not True:
+        raise HTTPException(status_code=404, detail="Permiso no encontrado.")
+
+    activar_permiso_de_rol(rol_id, permiso_id, int(usuario_actual["id"]))
+    return MensajeResponse(mensaje="Permiso activado en el rol correctamente.")
+
+
+def construir_rol_response(rol: dict[str, object]) -> RolResponse:
+    return RolResponse(
+        id=int(rol["id"]),
+        nombre=str(rol["nombre"]),
+        descripcion=None if rol["descripcion"] is None else str(rol["descripcion"]),
+        activo=bool(rol["activo"]),
+    )
+
+
+def construir_permiso_response(permiso: dict[str, object]) -> PermisoResponse:
+    return PermisoResponse(
+        id=int(permiso["id"]),
+        nombre=str(permiso["nombre"]),
+        modulo=str(permiso["modulo"]),
+        accion=str(permiso["accion"]),
+        descripcion=(
+            None if permiso["descripcion"] is None else str(permiso["descripcion"])
+        ),
+        activo=bool(permiso["activo"]),
+    )

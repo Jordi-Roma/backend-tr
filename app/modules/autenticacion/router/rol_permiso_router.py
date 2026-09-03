@@ -1,0 +1,136 @@
+from fastapi import APIRouter, Depends
+
+from app.modules.autenticacion.dependencies.admin_required import requerir_admin
+from app.modules.autenticacion.schemas.rol_permiso.rol_permiso_request import (
+    ActualizarRolRequest,
+    CrearPermisoRequest,
+    CrearRolRequest,
+)
+from app.modules.autenticacion.schemas.rol_permiso.rol_permiso_response import (
+    MensajeResponse,
+    PermisoResponse,
+    RolResponse,
+)
+from app.modules.autenticacion.services.rol_permiso_service import (
+    asignar_permiso,
+    editar_rol,
+    eliminar_permiso,
+    eliminar_rol,
+    obtener_permisos,
+    obtener_roles,
+    quitar_permiso,
+    reactivar_permiso,
+    reactivar_permiso_rol,
+    reactivar_rol,
+    registrar_permiso,
+    registrar_rol,
+)
+
+router = APIRouter(
+    prefix="/api/v1",
+    tags=["Roles y Permisos"],
+)
+
+
+@router.get("/roles", response_model=list[RolResponse])
+def listar_roles_endpoint(
+    usuario_actual: dict[str, object] = Depends(requerir_admin),
+) -> list[RolResponse]:
+    return obtener_roles()
+
+
+@router.post("/roles", response_model=RolResponse)
+def crear_rol_endpoint(
+    request: CrearRolRequest,
+    usuario_actual: dict[str, object] = Depends(requerir_admin),
+) -> RolResponse:
+    return registrar_rol(request, usuario_actual)
+
+
+@router.put("/roles/{rol_id}", response_model=RolResponse)
+def actualizar_rol_endpoint(
+    rol_id: int,
+    request: ActualizarRolRequest,
+    usuario_actual: dict[str, object] = Depends(requerir_admin),
+) -> RolResponse:
+    return editar_rol(rol_id, request, usuario_actual)
+
+
+@router.patch("/roles/{rol_id}/desactivar", response_model=MensajeResponse)
+def desactivar_rol_endpoint(
+    rol_id: int,
+    usuario_actual: dict[str, object] = Depends(requerir_admin),
+) -> MensajeResponse:
+    return eliminar_rol(rol_id, usuario_actual)
+
+
+@router.patch("/roles/{rol_id}/activar", response_model=MensajeResponse)
+def activar_rol_endpoint(
+    rol_id: int,
+    usuario_actual: dict[str, object] = Depends(requerir_admin),
+) -> MensajeResponse:
+    return reactivar_rol(rol_id, usuario_actual)
+
+
+@router.get("/permisos", response_model=list[PermisoResponse])
+def listar_permisos_endpoint(
+    usuario_actual: dict[str, object] = Depends(requerir_admin),
+) -> list[PermisoResponse]:
+    return obtener_permisos()
+
+
+@router.post("/permisos", response_model=PermisoResponse)
+def crear_permiso_endpoint(
+    request: CrearPermisoRequest,
+    usuario_actual: dict[str, object] = Depends(requerir_admin),
+) -> PermisoResponse:
+    return registrar_permiso(request, usuario_actual)
+
+
+@router.patch("/permisos/{permiso_id}/desactivar", response_model=MensajeResponse)
+def desactivar_permiso_endpoint(
+    permiso_id: int,
+    usuario_actual: dict[str, object] = Depends(requerir_admin),
+) -> MensajeResponse:
+    return eliminar_permiso(permiso_id, usuario_actual)
+
+
+@router.patch("/permisos/{permiso_id}/activar", response_model=MensajeResponse)
+def activar_permiso_endpoint(
+    permiso_id: int,
+    usuario_actual: dict[str, object] = Depends(requerir_admin),
+) -> MensajeResponse:
+    return reactivar_permiso(permiso_id, usuario_actual)
+
+
+@router.post("/roles/{rol_id}/permisos/{permiso_id}", response_model=MensajeResponse)
+def asignar_permiso_endpoint(
+    rol_id: int,
+    permiso_id: int,
+    usuario_actual: dict[str, object] = Depends(requerir_admin),
+) -> MensajeResponse:
+    return asignar_permiso(rol_id, permiso_id, usuario_actual)
+
+
+@router.patch(
+    "/roles/{rol_id}/permisos/{permiso_id}/desactivar",
+    response_model=MensajeResponse,
+)
+def quitar_permiso_endpoint(
+    rol_id: int,
+    permiso_id: int,
+    usuario_actual: dict[str, object] = Depends(requerir_admin),
+) -> MensajeResponse:
+    return quitar_permiso(rol_id, permiso_id, usuario_actual)
+
+
+@router.patch(
+    "/roles/{rol_id}/permisos/{permiso_id}/activar",
+    response_model=MensajeResponse,
+)
+def activar_permiso_rol_endpoint(
+    rol_id: int,
+    permiso_id: int,
+    usuario_actual: dict[str, object] = Depends(requerir_admin),
+) -> MensajeResponse:
+    return reactivar_permiso_rol(rol_id, permiso_id, usuario_actual)
