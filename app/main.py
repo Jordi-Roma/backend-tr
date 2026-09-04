@@ -4,8 +4,14 @@ from app.database.connection import get_connection
 from app.modules.administracion_comercial.router.ciudad_sucursal_router import (
     router as ciudad_sucursal_router,
 )
+from app.modules.administracion_comercial.router.catalogo_router import (
+    router as catalogo_router,
+)
 from app.modules.administracion_comercial.router.empleado_router import (
     router as empleado_router,
+)
+from app.modules.administracion_comercial.router.proveedor_router import (
+    router as proveedor_router,
 )
 from app.modules.autenticacion.router.perfil_router import router as perfil_router
 from app.modules.autenticacion.router.registro_router import router as registro_router
@@ -41,6 +47,8 @@ app.include_router(rol_permiso_router)
 app.include_router(usuario_admin_router)
 app.include_router(ciudad_sucursal_router)
 app.include_router(empleado_router)
+app.include_router(proveedor_router)
+app.include_router(catalogo_router)
 
 
 @app.get("/api/v1/health")
