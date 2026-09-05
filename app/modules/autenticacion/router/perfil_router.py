@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from app.modules.autenticacion.dependencies.usuario_actual import obtener_usuario_actual
 from app.modules.autenticacion.schemas.perfil.perfil_request import (
@@ -39,17 +39,23 @@ def ver_perfil(
 @router.put("", response_model=PerfilResponse)
 def editar_perfil(
     request: ActualizarPerfilRequest,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(obtener_usuario_actual),
 ) -> PerfilResponse:
-    return actualizar_perfil(usuario_actual, request)
+    ip = http_request.client.host if http_request.client else None
+    ua = http_request.headers.get("User-Agent")
+    return actualizar_perfil(usuario_actual, request, direccion_ip=ip, user_agent=ua)
 
 
 @router.put("/password", response_model=MensajeResponse)
 def editar_password(
     request: CambiarPasswordRequest,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(obtener_usuario_actual),
 ) -> MensajeResponse:
-    return cambiar_password(usuario_actual, request)
+    ip = http_request.client.host if http_request.client else None
+    ua = http_request.headers.get("User-Agent")
+    return cambiar_password(usuario_actual, request, direccion_ip=ip, user_agent=ua)
 
 
 @router.get("/direcciones", response_model=ListaDireccionesResponse)

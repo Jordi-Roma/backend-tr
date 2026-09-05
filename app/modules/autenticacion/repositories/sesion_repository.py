@@ -1,6 +1,7 @@
 from psycopg2.extras import RealDictCursor
 
 from app.database.connection import get_connection
+from app.modules.bitacora.bitacora_repository import registrar_bitacora
 
 
 def obtener_usuario_para_login(identificador: str) -> dict[str, object] | None:
@@ -194,34 +195,16 @@ def registrar_bitacora_login(
     accion: str,
     resultado: str,
     descripcion: str,
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> None:
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    try:
-        cursor.execute(
-            """
-            INSERT INTO bitacora (
-                usuario_id,
-                accion,
-                modulo,
-                descripcion,
-                resultado
-            )
-            VALUES (%s, %s, %s, %s, %s);
-            """,
-            (
-                usuario_id,
-                accion,
-                "AUTENTICACION",
-                descripcion,
-                resultado,
-            ),
-        )
-        connection.commit()
-    except Exception:
-        connection.rollback()
-        raise
-    finally:
-        cursor.close()
-        connection.close()
+    """Delegacion al repositorio central de bitacora."""
+    registrar_bitacora(
+        usuario_id=usuario_id,
+        accion=accion,
+        modulo="AUTENTICACION",
+        resultado=resultado,
+        descripcion=descripcion,
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )

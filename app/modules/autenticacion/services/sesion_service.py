@@ -18,7 +18,11 @@ from app.modules.autenticacion.schemas.sesion.sesion_response import (
 )
 
 
-def iniciar_sesion(request: LoginRequest) -> LoginResponse:
+def iniciar_sesion(
+    request: LoginRequest,
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
+) -> LoginResponse:
     identificador = request.identificador.strip().lower()
     usuario = obtener_usuario_para_login(identificador)
 
@@ -28,6 +32,8 @@ def iniciar_sesion(request: LoginRequest) -> LoginResponse:
             "INICIO_SESION_FALLIDO",
             "FALLIDO",
             "Intento de inicio de sesion con credenciales incorrectas.",
+            direccion_ip=direccion_ip,
+            user_agent=user_agent,
         )
         raise HTTPException(status_code=401, detail="Credenciales incorrectas.")
 
@@ -39,6 +45,8 @@ def iniciar_sesion(request: LoginRequest) -> LoginResponse:
             "INICIO_SESION_FALLIDO",
             "FALLIDO",
             "Intento de inicio de sesion con usuario inactivo.",
+            direccion_ip=direccion_ip,
+            user_agent=user_agent,
         )
         raise HTTPException(status_code=403, detail="Usuario inactivo.")
 
@@ -71,6 +79,8 @@ def iniciar_sesion(request: LoginRequest) -> LoginResponse:
             "INICIO_SESION_FALLIDO",
             "FALLIDO",
             "Intento de inicio de sesion con contrasena incorrecta.",
+            direccion_ip=direccion_ip,
+            user_agent=user_agent,
         )
 
         if int(intento["intentos_fallidos"]) >= 5:
@@ -101,6 +111,8 @@ def iniciar_sesion(request: LoginRequest) -> LoginResponse:
         "INICIO_SESION_EXITOSO",
         "EXITOSO",
         "Inicio de sesion exitoso.",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
     )
 
     return LoginResponse(
@@ -116,7 +128,11 @@ def iniciar_sesion(request: LoginRequest) -> LoginResponse:
     )
 
 
-def cerrar_sesion(token: str) -> LogoutResponse:
+def cerrar_sesion(
+    token: str,
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
+) -> LogoutResponse:
     try:
         payload = verificar_token_acceso(token)
     except ValueError as error:
@@ -144,6 +160,8 @@ def cerrar_sesion(token: str) -> LogoutResponse:
         "CIERRE_SESION",
         "EXITOSO",
         "Cierre de sesion exitoso.",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
     )
 
     return LogoutResponse(mensaje="Sesion cerrada correctamente.")

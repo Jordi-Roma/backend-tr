@@ -1,5 +1,7 @@
 from fastapi import HTTPException
 
+from app.modules.bitacora.bitacora_repository import registrar_bitacora
+
 from app.modules.administracion_comercial.repositories.ciudad_sucursal_repository import (
     actualizar_ciudad,
     actualizar_sucursal,
@@ -45,11 +47,22 @@ def obtener_ciudad(ciudad_id: int) -> CiudadResponse:
 def registrar_ciudad(
     request: CrearCiudadRequest,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> CiudadResponse:
     ciudad = crear_ciudad(
         request.nombre.strip(),
         request.departamento,
         int(usuario_actual["id"]),
+    )
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="CREAR",
+        modulo="CIUDADES",
+        resultado="EXITOSO",
+        descripcion=f"Ciudad creada: {request.nombre.strip()}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
     )
     return construir_ciudad_response(ciudad)
 
@@ -58,6 +71,8 @@ def editar_ciudad(
     ciudad_id: int,
     request: ActualizarCiudadRequest,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> CiudadResponse:
     ciudad_actual = obtener_ciudad_por_id(ciudad_id)
 
@@ -74,12 +89,23 @@ def editar_ciudad(
     if ciudad is None:
         raise HTTPException(status_code=404, detail="Ciudad no encontrada.")
 
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="ACTUALIZAR",
+        modulo="CIUDADES",
+        resultado="EXITOSO",
+        descripcion=f"Ciudad actualizada: id={ciudad_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return construir_ciudad_response(ciudad)
 
 
 def eliminar_ciudad(
     ciudad_id: int,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> MensajeResponse:
     ciudad = obtener_ciudad_por_id(ciudad_id)
 
@@ -97,12 +123,23 @@ def eliminar_ciudad(
     if not desactivada:
         raise HTTPException(status_code=404, detail="Ciudad no encontrada.")
 
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="DESACTIVAR",
+        modulo="CIUDADES",
+        resultado="EXITOSO",
+        descripcion=f"Ciudad desactivada: id={ciudad_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return MensajeResponse(mensaje="Ciudad desactivada correctamente.")
 
 
 def reactivar_ciudad(
     ciudad_id: int,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> MensajeResponse:
     ciudad = obtener_ciudad_por_id(ciudad_id)
 
@@ -114,6 +151,15 @@ def reactivar_ciudad(
     if not activada:
         raise HTTPException(status_code=404, detail="Ciudad no encontrada.")
 
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="ACTIVAR",
+        modulo="CIUDADES",
+        resultado="EXITOSO",
+        descripcion=f"Ciudad activada: id={ciudad_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return MensajeResponse(mensaje="Ciudad activada correctamente.")
 
 
@@ -134,6 +180,8 @@ def obtener_sucursal(sucursal_id: int) -> SucursalResponse:
 def registrar_sucursal(
     request: CrearSucursalRequest,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> SucursalResponse:
     validar_ciudad_activa(request.ciudad_id)
     sucursal = crear_sucursal(
@@ -143,6 +191,15 @@ def registrar_sucursal(
         request.telefono,
         int(usuario_actual["id"]),
     )
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="CREAR",
+        modulo="SUCURSALES",
+        resultado="EXITOSO",
+        descripcion=f"Sucursal creada: {request.nombre.strip()}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return construir_sucursal_response(sucursal)
 
 
@@ -150,6 +207,8 @@ def editar_sucursal(
     sucursal_id: int,
     request: ActualizarSucursalRequest,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> SucursalResponse:
     sucursal_actual = obtener_sucursal_por_id(sucursal_id)
 
@@ -169,12 +228,23 @@ def editar_sucursal(
     if sucursal is None:
         raise HTTPException(status_code=404, detail="Sucursal no encontrada.")
 
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="ACTUALIZAR",
+        modulo="SUCURSALES",
+        resultado="EXITOSO",
+        descripcion=f"Sucursal actualizada: id={sucursal_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return construir_sucursal_response(sucursal)
 
 
 def eliminar_sucursal(
     sucursal_id: int,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> MensajeResponse:
     sucursal = obtener_sucursal_por_id(sucursal_id)
 
@@ -186,12 +256,23 @@ def eliminar_sucursal(
     if not desactivada:
         raise HTTPException(status_code=404, detail="Sucursal no encontrada.")
 
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="DESACTIVAR",
+        modulo="SUCURSALES",
+        resultado="EXITOSO",
+        descripcion=f"Sucursal desactivada: id={sucursal_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return MensajeResponse(mensaje="Sucursal desactivada correctamente.")
 
 
 def reactivar_sucursal(
     sucursal_id: int,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> MensajeResponse:
     sucursal = obtener_sucursal_por_id(sucursal_id)
 
@@ -209,6 +290,15 @@ def reactivar_sucursal(
     if not activada:
         raise HTTPException(status_code=404, detail="Sucursal no encontrada.")
 
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="ACTIVAR",
+        modulo="SUCURSALES",
+        resultado="EXITOSO",
+        descripcion=f"Sucursal activada: id={sucursal_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return MensajeResponse(mensaje="Sucursal activada correctamente.")
 
 

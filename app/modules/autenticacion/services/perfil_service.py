@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 
 from app.core.security import hashear_password, verificar_password
+from app.modules.bitacora.bitacora_repository import registrar_bitacora
 from app.modules.autenticacion.repositories.perfil_repository import (
     actualizar_direccion_cliente,
     actualizar_password_hash,
@@ -38,6 +39,8 @@ def obtener_perfil(usuario_actual: dict[str, object]) -> PerfilResponse:
 def actualizar_perfil(
     usuario_actual: dict[str, object],
     request: ActualizarPerfilRequest,
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> PerfilResponse:
     usuario_id = int(usuario_actual["id"])
     perfil = actualizar_perfil_cliente(
@@ -50,12 +53,23 @@ def actualizar_perfil(
     if perfil is None:
         raise HTTPException(status_code=404, detail="Perfil no encontrado.")
 
+    registrar_bitacora(
+        usuario_id=usuario_id,
+        accion="ACTUALIZAR",
+        modulo="PERFIL",
+        resultado="EXITOSO",
+        descripcion="Perfil actualizado correctamente.",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return construir_perfil_response(perfil)
 
 
 def cambiar_password(
     usuario_actual: dict[str, object],
     request: CambiarPasswordRequest,
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> MensajeResponse:
     usuario_id = int(usuario_actual["id"])
 
@@ -86,6 +100,15 @@ def cambiar_password(
     if not actualizado:
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
 
+    registrar_bitacora(
+        usuario_id=usuario_id,
+        accion="CAMBIAR_CONTRASENA",
+        modulo="PERFIL",
+        resultado="EXITOSO",
+        descripcion="Contraseña actualizada correctamente.",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return MensajeResponse(mensaje="Contraseña actualizada correctamente.")
 
 

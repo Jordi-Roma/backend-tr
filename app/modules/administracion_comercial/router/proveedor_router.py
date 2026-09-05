@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from app.modules.administracion_comercial.schemas.proveedor.proveedor_request import (
     ActualizarProveedorRequest,
@@ -24,6 +24,15 @@ router = APIRouter(
 )
 
 
+def _ip(req: Request) -> str | None:
+    fwd = req.headers.get("X-Forwarded-For")
+    return fwd.split(",")[0].strip() if fwd else (req.client.host if req.client else None)
+
+
+def _ua(req: Request) -> str | None:
+    return req.headers.get("User-Agent")
+
+
 @router.get("/proveedores", response_model=list[ProveedorResponse])
 def listar_proveedores_endpoint(
     usuario_actual: dict[str, object] = Depends(requerir_admin),
@@ -34,9 +43,10 @@ def listar_proveedores_endpoint(
 @router.post("/proveedores", response_model=ProveedorResponse)
 def crear_proveedor_endpoint(
     request: CrearProveedorRequest,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> ProveedorResponse:
-    return registrar_proveedor(request, usuario_actual)
+    return registrar_proveedor(request, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.get("/proveedores/{proveedor_id}", response_model=ProveedorResponse)
@@ -51,22 +61,25 @@ def obtener_proveedor_endpoint(
 def actualizar_proveedor_endpoint(
     proveedor_id: int,
     request: ActualizarProveedorRequest,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> ProveedorResponse:
-    return editar_proveedor(proveedor_id, request, usuario_actual)
+    return editar_proveedor(proveedor_id, request, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.patch("/proveedores/{proveedor_id}/desactivar", response_model=MensajeResponse)
 def desactivar_proveedor_endpoint(
     proveedor_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> MensajeResponse:
-    return eliminar_proveedor(proveedor_id, usuario_actual)
+    return eliminar_proveedor(proveedor_id, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.patch("/proveedores/{proveedor_id}/activar", response_model=ProveedorResponse)
 def activar_proveedor_endpoint(
     proveedor_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> ProveedorResponse:
-    return reactivar_proveedor(proveedor_id, usuario_actual)
+    return reactivar_proveedor(proveedor_id, usuario_actual, _ip(http_request), _ua(http_request))

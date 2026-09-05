@@ -1,5 +1,7 @@
 from fastapi import HTTPException
 
+from app.modules.bitacora.bitacora_repository import registrar_bitacora
+
 from app.modules.autenticacion.repositories.usuario_admin_repository import (
     actualizar_usuario,
     activar_rol_de_usuario,
@@ -40,6 +42,8 @@ def editar_usuario(
     usuario_id: int,
     request: ActualizarUsuarioRequest,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> UsuarioAdminResponse:
     usuario = obtener_usuario_admin_por_id(usuario_id)
 
@@ -71,12 +75,23 @@ def editar_usuario(
     if usuario_actualizado is None:
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
 
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="ACTUALIZAR",
+        modulo="USUARIOS",
+        resultado="EXITOSO",
+        descripcion=f"Usuario actualizado: id={usuario_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return construir_usuario_response(usuario_actualizado)
 
 
 def eliminar_usuario(
     usuario_id: int,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> MensajeResponse:
     usuario_admin_id = int(usuario_actual["id"])
 
@@ -96,12 +111,23 @@ def eliminar_usuario(
     if not desactivado:
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
 
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="DESACTIVAR",
+        modulo="USUARIOS",
+        resultado="EXITOSO",
+        descripcion=f"Usuario desactivado: id={usuario_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return MensajeResponse(mensaje="Usuario desactivado correctamente.")
 
 
 def reactivar_usuario(
     usuario_id: int,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> MensajeResponse:
     usuario = obtener_usuario_admin_por_id(usuario_id)
 
@@ -113,6 +139,15 @@ def reactivar_usuario(
     if not activado:
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
 
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="ACTIVAR",
+        modulo="USUARIOS",
+        resultado="EXITOSO",
+        descripcion=f"Usuario activado: id={usuario_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return MensajeResponse(mensaje="Usuario activado correctamente.")
 
 
@@ -120,6 +155,8 @@ def asignar_rol_usuario(
     usuario_id: int,
     rol_id: int,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> MensajeResponse:
     usuario = obtener_usuario_admin_por_id(usuario_id)
 
@@ -132,6 +169,15 @@ def asignar_rol_usuario(
         raise HTTPException(status_code=404, detail="Rol no encontrado.")
 
     asignar_rol_a_usuario(usuario_id, rol_id, int(usuario_actual["id"]))
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="ASIGNAR_ROL",
+        modulo="USUARIOS",
+        resultado="EXITOSO",
+        descripcion=f"Rol id={rol_id} asignado a usuario id={usuario_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return MensajeResponse(mensaje="Rol asignado correctamente.")
 
 
@@ -139,6 +185,8 @@ def desactivar_rol_usuario(
     usuario_id: int,
     rol_id: int,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> MensajeResponse:
     usuario_admin_id = int(usuario_actual["id"])
     usuario = obtener_usuario_admin_por_id(usuario_id)
@@ -165,6 +213,15 @@ def desactivar_rol_usuario(
             detail="Relacion usuario-rol no encontrada.",
         )
 
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="DESACTIVAR_ROL",
+        modulo="USUARIOS",
+        resultado="EXITOSO",
+        descripcion=f"Rol id={rol_id} desactivado de usuario id={usuario_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return MensajeResponse(mensaje="Rol desactivado del usuario correctamente.")
 
 
@@ -172,6 +229,8 @@ def activar_rol_usuario(
     usuario_id: int,
     rol_id: int,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> MensajeResponse:
     usuario = obtener_usuario_admin_por_id(usuario_id)
 
@@ -184,6 +243,15 @@ def activar_rol_usuario(
         raise HTTPException(status_code=404, detail="Rol no encontrado.")
 
     activar_rol_de_usuario(usuario_id, rol_id, int(usuario_actual["id"]))
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="ACTIVAR_ROL",
+        modulo="USUARIOS",
+        resultado="EXITOSO",
+        descripcion=f"Rol id={rol_id} activado en usuario id={usuario_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return MensajeResponse(mensaje="Rol activado del usuario correctamente.")
 
 

@@ -1,5 +1,7 @@
 from fastapi import HTTPException
 
+from app.modules.bitacora.bitacora_repository import registrar_bitacora
+
 from app.modules.autenticacion.repositories.rol_permiso_repository import (
     actualizar_rol,
     activar_permiso,
@@ -39,6 +41,8 @@ def obtener_roles() -> list[RolResponse]:
 def registrar_rol(
     request: CrearRolRequest,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> RolResponse:
     nombre = request.nombre.strip().upper()
     rol_existente = obtener_rol_por_nombre(nombre)
@@ -47,6 +51,15 @@ def registrar_rol(
         raise HTTPException(status_code=409, detail="El rol ya existe.")
 
     rol = crear_rol(nombre, request.descripcion, int(usuario_actual["id"]))
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="CREAR",
+        modulo="ROLES",
+        resultado="EXITOSO",
+        descripcion=f"Rol creado: {nombre}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return construir_rol_response(rol)
 
 
@@ -54,6 +67,8 @@ def editar_rol(
     rol_id: int,
     request: ActualizarRolRequest,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> RolResponse:
     rol_actual = obtener_rol_por_id(rol_id)
 
@@ -71,10 +86,24 @@ def editar_rol(
     if rol is None:
         raise HTTPException(status_code=404, detail="Rol no encontrado.")
 
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="ACTUALIZAR",
+        modulo="ROLES",
+        resultado="EXITOSO",
+        descripcion=f"Rol actualizado: id={rol_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return construir_rol_response(rol)
 
 
-def eliminar_rol(rol_id: int, usuario_actual: dict[str, object]) -> MensajeResponse:
+def eliminar_rol(
+    rol_id: int,
+    usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
+) -> MensajeResponse:
     rol = obtener_rol_por_id(rol_id)
 
     if rol is None or rol["activo"] is not True:
@@ -91,10 +120,24 @@ def eliminar_rol(rol_id: int, usuario_actual: dict[str, object]) -> MensajeRespo
     if not desactivado:
         raise HTTPException(status_code=404, detail="Rol no encontrado.")
 
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="DESACTIVAR",
+        modulo="ROLES",
+        resultado="EXITOSO",
+        descripcion=f"Rol desactivado: id={rol_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return MensajeResponse(mensaje="Rol desactivado correctamente.")
 
 
-def reactivar_rol(rol_id: int, usuario_actual: dict[str, object]) -> MensajeResponse:
+def reactivar_rol(
+    rol_id: int,
+    usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
+) -> MensajeResponse:
     rol = obtener_rol_por_id(rol_id)
 
     if rol is None:
@@ -105,6 +148,15 @@ def reactivar_rol(rol_id: int, usuario_actual: dict[str, object]) -> MensajeResp
     if not activado:
         raise HTTPException(status_code=404, detail="Rol no encontrado.")
 
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="ACTIVAR",
+        modulo="ROLES",
+        resultado="EXITOSO",
+        descripcion=f"Rol activado: id={rol_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return MensajeResponse(mensaje="Rol activado correctamente.")
 
 
@@ -116,6 +168,8 @@ def obtener_permisos() -> list[PermisoResponse]:
 def registrar_permiso(
     request: CrearPermisoRequest,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> PermisoResponse:
     nombre = request.nombre.strip().upper()
     modulo = request.modulo.strip().upper()
@@ -138,12 +192,23 @@ def registrar_permiso(
         request.descripcion,
         int(usuario_actual["id"]),
     )
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="CREAR",
+        modulo="PERMISOS",
+        resultado="EXITOSO",
+        descripcion=f"Permiso creado: {nombre}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return construir_permiso_response(permiso)
 
 
 def eliminar_permiso(
     permiso_id: int,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> MensajeResponse:
     permiso = obtener_permiso_por_id(permiso_id)
 
@@ -155,12 +220,23 @@ def eliminar_permiso(
     if not desactivado:
         raise HTTPException(status_code=404, detail="Permiso no encontrado.")
 
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="DESACTIVAR",
+        modulo="PERMISOS",
+        resultado="EXITOSO",
+        descripcion=f"Permiso desactivado: id={permiso_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return MensajeResponse(mensaje="Permiso desactivado correctamente.")
 
 
 def reactivar_permiso(
     permiso_id: int,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> MensajeResponse:
     permiso = obtener_permiso_por_id(permiso_id)
 
@@ -172,6 +248,15 @@ def reactivar_permiso(
     if not activado:
         raise HTTPException(status_code=404, detail="Permiso no encontrado.")
 
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="ACTIVAR",
+        modulo="PERMISOS",
+        resultado="EXITOSO",
+        descripcion=f"Permiso activado: id={permiso_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return MensajeResponse(mensaje="Permiso activado correctamente.")
 
 
@@ -179,6 +264,8 @@ def asignar_permiso(
     rol_id: int,
     permiso_id: int,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> MensajeResponse:
     rol = obtener_rol_por_id(rol_id)
 
@@ -191,6 +278,15 @@ def asignar_permiso(
         raise HTTPException(status_code=404, detail="Permiso no encontrado.")
 
     asignar_permiso_a_rol(rol_id, permiso_id, int(usuario_actual["id"]))
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="ASIGNAR_PERMISO",
+        modulo="ROLES",
+        resultado="EXITOSO",
+        descripcion=f"Permiso id={permiso_id} asignado a rol id={rol_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return MensajeResponse(mensaje="Permiso asignado correctamente.")
 
 
@@ -198,6 +294,8 @@ def quitar_permiso(
     rol_id: int,
     permiso_id: int,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> MensajeResponse:
     rol = obtener_rol_por_id(rol_id)
 
@@ -218,6 +316,15 @@ def quitar_permiso(
     if not desactivado:
         raise HTTPException(status_code=404, detail="Relacion rol-permiso no encontrada.")
 
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="QUITAR_PERMISO",
+        modulo="ROLES",
+        resultado="EXITOSO",
+        descripcion=f"Permiso id={permiso_id} quitado de rol id={rol_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return MensajeResponse(mensaje="Permiso quitado del rol correctamente.")
 
 
@@ -225,6 +332,8 @@ def reactivar_permiso_rol(
     rol_id: int,
     permiso_id: int,
     usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
 ) -> MensajeResponse:
     rol = obtener_rol_por_id(rol_id)
 
@@ -237,6 +346,15 @@ def reactivar_permiso_rol(
         raise HTTPException(status_code=404, detail="Permiso no encontrado.")
 
     activar_permiso_de_rol(rol_id, permiso_id, int(usuario_actual["id"]))
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="ACTIVAR_PERMISO",
+        modulo="ROLES",
+        resultado="EXITOSO",
+        descripcion=f"Permiso id={permiso_id} activado en rol id={rol_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
     return MensajeResponse(mensaje="Permiso activado en el rol correctamente.")
 
 

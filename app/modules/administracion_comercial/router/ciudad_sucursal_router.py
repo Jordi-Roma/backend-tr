@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from app.modules.administracion_comercial.schemas.ciudad_sucursal.ciudad_sucursal_request import (
     ActualizarCiudadRequest,
@@ -33,6 +33,15 @@ router = APIRouter(
 )
 
 
+def _ip(req: Request) -> str | None:
+    fwd = req.headers.get("X-Forwarded-For")
+    return fwd.split(",")[0].strip() if fwd else (req.client.host if req.client else None)
+
+
+def _ua(req: Request) -> str | None:
+    return req.headers.get("User-Agent")
+
+
 @router.get("/ciudades", response_model=list[CiudadResponse])
 def listar_ciudades_endpoint(
     usuario_actual: dict[str, object] = Depends(requerir_admin),
@@ -43,9 +52,10 @@ def listar_ciudades_endpoint(
 @router.post("/ciudades", response_model=CiudadResponse)
 def crear_ciudad_endpoint(
     request: CrearCiudadRequest,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> CiudadResponse:
-    return registrar_ciudad(request, usuario_actual)
+    return registrar_ciudad(request, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.get("/ciudades/{ciudad_id}", response_model=CiudadResponse)
@@ -60,25 +70,28 @@ def obtener_ciudad_endpoint(
 def actualizar_ciudad_endpoint(
     ciudad_id: int,
     request: ActualizarCiudadRequest,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> CiudadResponse:
-    return editar_ciudad(ciudad_id, request, usuario_actual)
+    return editar_ciudad(ciudad_id, request, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.patch("/ciudades/{ciudad_id}/desactivar", response_model=MensajeResponse)
 def desactivar_ciudad_endpoint(
     ciudad_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> MensajeResponse:
-    return eliminar_ciudad(ciudad_id, usuario_actual)
+    return eliminar_ciudad(ciudad_id, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.patch("/ciudades/{ciudad_id}/activar", response_model=MensajeResponse)
 def activar_ciudad_endpoint(
     ciudad_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> MensajeResponse:
-    return reactivar_ciudad(ciudad_id, usuario_actual)
+    return reactivar_ciudad(ciudad_id, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.get("/sucursales", response_model=list[SucursalResponse])
@@ -91,9 +104,10 @@ def listar_sucursales_endpoint(
 @router.post("/sucursales", response_model=SucursalResponse)
 def crear_sucursal_endpoint(
     request: CrearSucursalRequest,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> SucursalResponse:
-    return registrar_sucursal(request, usuario_actual)
+    return registrar_sucursal(request, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.get("/sucursales/{sucursal_id}", response_model=SucursalResponse)
@@ -108,22 +122,25 @@ def obtener_sucursal_endpoint(
 def actualizar_sucursal_endpoint(
     sucursal_id: int,
     request: ActualizarSucursalRequest,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> SucursalResponse:
-    return editar_sucursal(sucursal_id, request, usuario_actual)
+    return editar_sucursal(sucursal_id, request, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.patch("/sucursales/{sucursal_id}/desactivar", response_model=MensajeResponse)
 def desactivar_sucursal_endpoint(
     sucursal_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> MensajeResponse:
-    return eliminar_sucursal(sucursal_id, usuario_actual)
+    return eliminar_sucursal(sucursal_id, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.patch("/sucursales/{sucursal_id}/activar", response_model=MensajeResponse)
 def activar_sucursal_endpoint(
     sucursal_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> MensajeResponse:
-    return reactivar_sucursal(sucursal_id, usuario_actual)
+    return reactivar_sucursal(sucursal_id, usuario_actual, _ip(http_request), _ua(http_request))

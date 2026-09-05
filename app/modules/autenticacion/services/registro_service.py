@@ -2,6 +2,7 @@ from fastapi import HTTPException
 
 from app.core.security import hashear_password
 from app.modules.autenticacion.entities.usuario_entity import UsuarioEntity
+from app.modules.bitacora.bitacora_repository import registrar_bitacora
 from app.modules.autenticacion.repositories.usuario_repository import (
     crear_usuario_cliente,
     obtener_usuario_por_correo,
@@ -15,7 +16,11 @@ from app.modules.autenticacion.schemas.usuario.usuario_response import (
 )
 
 
-def registrar_cliente(request: UsuarioRegistroRequest) -> UsuarioRegistroResponse:
+def registrar_cliente(
+    request: UsuarioRegistroRequest,
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
+) -> UsuarioRegistroResponse:
     correo = request.correo.strip().lower()
     username = request.username.strip().lower()
     usuario_existente = obtener_usuario_por_correo(correo)
@@ -52,6 +57,16 @@ def registrar_cliente(request: UsuarioRegistroRequest) -> UsuarioRegistroRespons
         usuario_creado = crear_usuario_cliente(usuario, request.telefono)
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
+
+    registrar_bitacora(
+        usuario_id=int(usuario_creado["id"]),
+        accion="REGISTRO",
+        modulo="USUARIOS",
+        resultado="EXITOSO",
+        descripcion=f"Nuevo cliente registrado: {str(usuario_creado['username'])}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
 
     return UsuarioRegistroResponse(
         id=int(usuario_creado["id"]),

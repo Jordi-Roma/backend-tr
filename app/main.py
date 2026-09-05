@@ -13,6 +13,15 @@ from app.modules.administracion_comercial.router.empleado_router import (
 from app.modules.administracion_comercial.router.proveedor_router import (
     router as proveedor_router,
 )
+from app.modules.administracion_comercial.router.temporada_router import (
+    router as temporada_router,
+)
+from app.modules.administracion_comercial.router.coleccion_router import (
+    router as coleccion_router,
+)
+from app.modules.administracion_comercial.router.producto_router import router as producto_router
+from app.modules.administracion_comercial.router.variante_router import router as variante_router
+from app.modules.bitacora.bitacora_router import router as bitacora_router
 from app.modules.autenticacion.router.perfil_router import router as perfil_router
 from app.modules.autenticacion.router.registro_router import router as registro_router
 from app.modules.autenticacion.router.rol_permiso_router import (
@@ -49,6 +58,11 @@ app.include_router(ciudad_sucursal_router)
 app.include_router(empleado_router)
 app.include_router(proveedor_router)
 app.include_router(catalogo_router)
+app.include_router(temporada_router)
+app.include_router(coleccion_router)
+app.include_router(producto_router)
+app.include_router(variante_router)
+app.include_router(bitacora_router)
 
 
 @app.get("/api/v1/health")

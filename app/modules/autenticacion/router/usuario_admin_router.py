@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from app.modules.autenticacion.dependencies.admin_required import requerir_admin
 from app.modules.autenticacion.schemas.usuario_admin.usuario_admin_request import (
@@ -25,6 +25,15 @@ router = APIRouter(
 )
 
 
+def _ip(req: Request) -> str | None:
+    fwd = req.headers.get("X-Forwarded-For")
+    return fwd.split(",")[0].strip() if fwd else (req.client.host if req.client else None)
+
+
+def _ua(req: Request) -> str | None:
+    return req.headers.get("User-Agent")
+
+
 @router.get("/usuarios", response_model=list[UsuarioAdminResponse])
 def listar_usuarios_endpoint(
     usuario_actual: dict[str, object] = Depends(requerir_admin),
@@ -44,34 +53,38 @@ def obtener_usuario_endpoint(
 def actualizar_usuario_endpoint(
     usuario_id: int,
     request: ActualizarUsuarioRequest,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> UsuarioAdminResponse:
-    return editar_usuario(usuario_id, request, usuario_actual)
+    return editar_usuario(usuario_id, request, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.patch("/usuarios/{usuario_id}/desactivar", response_model=MensajeResponse)
 def desactivar_usuario_endpoint(
     usuario_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> MensajeResponse:
-    return eliminar_usuario(usuario_id, usuario_actual)
+    return eliminar_usuario(usuario_id, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.patch("/usuarios/{usuario_id}/activar", response_model=MensajeResponse)
 def activar_usuario_endpoint(
     usuario_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> MensajeResponse:
-    return reactivar_usuario(usuario_id, usuario_actual)
+    return reactivar_usuario(usuario_id, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.post("/usuarios/{usuario_id}/roles/{rol_id}", response_model=MensajeResponse)
 def asignar_rol_endpoint(
     usuario_id: int,
     rol_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> MensajeResponse:
-    return asignar_rol_usuario(usuario_id, rol_id, usuario_actual)
+    return asignar_rol_usuario(usuario_id, rol_id, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.patch(
@@ -81,9 +94,10 @@ def asignar_rol_endpoint(
 def desactivar_rol_endpoint(
     usuario_id: int,
     rol_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> MensajeResponse:
-    return desactivar_rol_usuario(usuario_id, rol_id, usuario_actual)
+    return desactivar_rol_usuario(usuario_id, rol_id, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.patch(
@@ -93,6 +107,7 @@ def desactivar_rol_endpoint(
 def activar_rol_endpoint(
     usuario_id: int,
     rol_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> MensajeResponse:
-    return activar_rol_usuario(usuario_id, rol_id, usuario_actual)
+    return activar_rol_usuario(usuario_id, rol_id, usuario_actual, _ip(http_request), _ua(http_request))

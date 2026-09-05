@@ -14,9 +14,11 @@ def listar_categorias() -> list[dict[str, object]]:
     try:
         cursor.execute(
             """
-            SELECT id, nombre, descripcion, activo, fecha_creacion
-            FROM categoria
-            ORDER BY nombre ASC;
+            SELECT c.id, c.categoria_padre_id, cp.nombre AS categoria_padre_nombre, 
+                   c.nombre, c.descripcion, c.activo, c.fecha_creacion
+            FROM categoria c
+            LEFT JOIN categoria cp ON cp.id = c.categoria_padre_id
+            ORDER BY c.nombre ASC;
             """
         )
         return [dict(c) for c in cursor.fetchall()]
@@ -32,15 +34,40 @@ def obtener_categoria_por_id(categoria_id: int) -> dict[str, object] | None:
     try:
         cursor.execute(
             """
-            SELECT id, nombre, descripcion, activo, fecha_creacion
-            FROM categoria
-            WHERE id = %s
+            SELECT c.id, c.categoria_padre_id, cp.nombre AS categoria_padre_nombre,
+                   c.nombre, c.descripcion, c.activo, c.fecha_creacion
+            FROM categoria c
+            LEFT JOIN categoria cp ON cp.id = c.categoria_padre_id
+            WHERE c.id = %s
             LIMIT 1;
             """,
             (categoria_id,),
         )
         row = cursor.fetchone()
         return dict(row) if row is not None else None
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def obtener_descendientes_categoria(categoria_id: int) -> list[int]:
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        cursor.execute(
+            """
+            WITH RECURSIVE descendientes AS (
+                SELECT id FROM categoria WHERE id = %s
+                UNION ALL
+                SELECT c.id FROM categoria c
+                INNER JOIN descendientes d ON c.categoria_padre_id = d.id
+            )
+            SELECT id FROM descendientes WHERE id != %s;
+            """,
+            (categoria_id, categoria_id),
+        )
+        return [c['id'] for c in cursor.fetchall()]
     finally:
         cursor.close()
         connection.close()
@@ -68,6 +95,7 @@ def obtener_categoria_por_nombre(nombre: str) -> dict[str, object] | None:
 
 
 def crear_categoria(
+    categoria_padre_id: int | None,
     nombre: str,
     descripcion: str | None,
 ) -> dict[str, object]:
@@ -77,11 +105,11 @@ def crear_categoria(
     try:
         cursor.execute(
             """
-            INSERT INTO categoria (nombre, descripcion)
-            VALUES (%s, %s)
-            RETURNING id, nombre, descripcion, activo, fecha_creacion;
+            INSERT INTO categoria (categoria_padre_id, nombre, descripcion)
+            VALUES (%s, %s, %s)
+            RETURNING id, categoria_padre_id, nombre, descripcion, activo, fecha_creacion;
             """,
-            (nombre, descripcion),
+            (categoria_padre_id, nombre, descripcion),
         )
         row = cursor.fetchone()
         connection.commit()
@@ -96,6 +124,7 @@ def crear_categoria(
 
 def actualizar_categoria(
     categoria_id: int,
+    categoria_padre_id: int | None,
     nombre: str,
     descripcion: str | None,
 ) -> dict[str, object] | None:
@@ -106,12 +135,13 @@ def actualizar_categoria(
         cursor.execute(
             """
             UPDATE categoria
-            SET nombre = %s,
+            SET categoria_padre_id = %s,
+                nombre = %s,
                 descripcion = %s
             WHERE id = %s
-            RETURNING id, nombre, descripcion, activo, fecha_creacion;
+            RETURNING id, categoria_padre_id, nombre, descripcion, activo, fecha_creacion;
             """,
-            (nombre, descripcion, categoria_id),
+            (categoria_padre_id, nombre, descripcion, categoria_id),
         )
         row = cursor.fetchone()
 
@@ -136,17 +166,23 @@ def desactivar_categoria(categoria_id: int) -> bool:
     try:
         cursor.execute(
             """
+            WITH RECURSIVE descendientes AS (
+                SELECT id FROM categoria WHERE id = %s
+                UNION ALL
+                SELECT c.id FROM categoria c
+                INNER JOIN descendientes d ON c.categoria_padre_id = d.id
+            )
             UPDATE categoria
             SET activo = FALSE
-            WHERE id = %s
-                AND activo = TRUE
+            WHERE id IN (SELECT id FROM descendientes)
+              AND activo = TRUE
             RETURNING id;
             """,
             (categoria_id,),
         )
-        row = cursor.fetchone()
+        rows = cursor.fetchall()
 
-        if row is None:
+        if not rows:
             connection.rollback()
             return False
 
@@ -167,14 +203,24 @@ def activar_categoria(categoria_id: int) -> dict[str, object] | None:
     try:
         cursor.execute(
             """
+            WITH RECURSIVE descendientes AS (
+                SELECT id FROM categoria WHERE id = %s
+                UNION ALL
+                SELECT c.id FROM categoria c
+                INNER JOIN descendientes d ON c.categoria_padre_id = d.id
+            )
             UPDATE categoria
             SET activo = TRUE
-            WHERE id = %s
-            RETURNING id, nombre, descripcion, activo, fecha_creacion;
+            WHERE id IN (SELECT id FROM descendientes)
+              AND activo = FALSE
+            RETURNING id, categoria_padre_id, nombre, descripcion, activo, fecha_creacion;
             """,
             (categoria_id,),
         )
-        row = cursor.fetchone()
+        rows = cursor.fetchall()
+        
+        # Obtenemos la categoría raíz que fue activada (para mantener compatibilidad con el retorno)
+        row = next((r for r in rows if r['id'] == categoria_id), None)
 
         if row is None:
             connection.rollback()
@@ -619,6 +665,214 @@ def contar_variantes_activas_por_color(color_id: int) -> int:
                 AND activo = TRUE;
             """,
             (color_id,),
+        )
+        row = cursor.fetchone()
+        return int(row["total"]) if row else 0
+    finally:
+        cursor.close()
+        connection.close()
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MARCAS
+# ═══════════════════════════════════════════════════════════════════════════
+
+def listar_marcas() -> list[dict[str, object]]:
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        cursor.execute(
+            """
+            SELECT id, nombre, descripcion, activo, fecha_creacion
+            FROM marca
+            ORDER BY nombre ASC;
+            """
+        )
+        return [dict(c) for c in cursor.fetchall()]
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def obtener_marca_por_id(marca_id: int) -> dict[str, object] | None:
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        cursor.execute(
+            """
+            SELECT id, nombre, descripcion, activo, fecha_creacion
+            FROM marca
+            WHERE id = %s
+            LIMIT 1;
+            """,
+            (marca_id,),
+        )
+        row = cursor.fetchone()
+        return dict(row) if row is not None else None
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def obtener_marca_por_nombre(nombre: str) -> dict[str, object] | None:
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        cursor.execute(
+            """
+            SELECT id, nombre
+            FROM marca
+            WHERE lower(nombre) = lower(%s)
+            LIMIT 1;
+            """,
+            (nombre,),
+        )
+        row = cursor.fetchone()
+        return dict(row) if row is not None else None
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def crear_marca(
+    nombre: str,
+    descripcion: str | None,
+) -> dict[str, object]:
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        cursor.execute(
+            """
+            INSERT INTO marca (nombre, descripcion)
+            VALUES (%s, %s)
+            RETURNING id, nombre, descripcion, activo, fecha_creacion;
+            """,
+            (nombre, descripcion),
+        )
+        row = cursor.fetchone()
+        connection.commit()
+        return dict(row)
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def actualizar_marca(
+    marca_id: int,
+    nombre: str,
+    descripcion: str | None,
+) -> dict[str, object] | None:
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        cursor.execute(
+            """
+            UPDATE marca
+            SET nombre = %s,
+                descripcion = %s
+            WHERE id = %s
+            RETURNING id, nombre, descripcion, activo, fecha_creacion;
+            """,
+            (nombre, descripcion, marca_id),
+        )
+        row = cursor.fetchone()
+
+        if row is None:
+            connection.rollback()
+            return None
+
+        connection.commit()
+        return dict(row)
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def desactivar_marca(marca_id: int) -> bool:
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        cursor.execute(
+            """
+            UPDATE marca
+            SET activo = FALSE
+            WHERE id = %s
+                AND activo = TRUE
+            RETURNING id;
+            """,
+            (marca_id,),
+        )
+        row = cursor.fetchone()
+
+        if row is None:
+            connection.rollback()
+            return False
+
+        connection.commit()
+        return True
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def activar_marca(marca_id: int) -> dict[str, object] | None:
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        cursor.execute(
+            """
+            UPDATE marca
+            SET activo = TRUE
+            WHERE id = %s
+            RETURNING id, nombre, descripcion, activo, fecha_creacion;
+            """,
+            (marca_id,),
+        )
+        row = cursor.fetchone()
+
+        if row is None:
+            connection.rollback()
+            return None
+
+        connection.commit()
+        return dict(row)
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def contar_productos_activos_por_marca(marca_id: int) -> int:
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        cursor.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM producto
+            WHERE marca_id = %s
+                AND activo = TRUE;
+            """,
+            (marca_id,),
         )
         row = cursor.fetchone()
         return int(row["total"]) if row else 0

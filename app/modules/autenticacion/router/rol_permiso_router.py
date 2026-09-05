@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from app.modules.autenticacion.dependencies.admin_required import requerir_admin
 from app.modules.autenticacion.schemas.rol_permiso.rol_permiso_request import (
@@ -32,6 +32,15 @@ router = APIRouter(
 )
 
 
+def _ip(req: Request) -> str | None:
+    fwd = req.headers.get("X-Forwarded-For")
+    return fwd.split(",")[0].strip() if fwd else (req.client.host if req.client else None)
+
+
+def _ua(req: Request) -> str | None:
+    return req.headers.get("User-Agent")
+
+
 @router.get("/roles", response_model=list[RolResponse])
 def listar_roles_endpoint(
     usuario_actual: dict[str, object] = Depends(requerir_admin),
@@ -42,34 +51,38 @@ def listar_roles_endpoint(
 @router.post("/roles", response_model=RolResponse)
 def crear_rol_endpoint(
     request: CrearRolRequest,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> RolResponse:
-    return registrar_rol(request, usuario_actual)
+    return registrar_rol(request, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.put("/roles/{rol_id}", response_model=RolResponse)
 def actualizar_rol_endpoint(
     rol_id: int,
     request: ActualizarRolRequest,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> RolResponse:
-    return editar_rol(rol_id, request, usuario_actual)
+    return editar_rol(rol_id, request, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.patch("/roles/{rol_id}/desactivar", response_model=MensajeResponse)
 def desactivar_rol_endpoint(
     rol_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> MensajeResponse:
-    return eliminar_rol(rol_id, usuario_actual)
+    return eliminar_rol(rol_id, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.patch("/roles/{rol_id}/activar", response_model=MensajeResponse)
 def activar_rol_endpoint(
     rol_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> MensajeResponse:
-    return reactivar_rol(rol_id, usuario_actual)
+    return reactivar_rol(rol_id, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.get("/permisos", response_model=list[PermisoResponse])
@@ -82,34 +95,38 @@ def listar_permisos_endpoint(
 @router.post("/permisos", response_model=PermisoResponse)
 def crear_permiso_endpoint(
     request: CrearPermisoRequest,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> PermisoResponse:
-    return registrar_permiso(request, usuario_actual)
+    return registrar_permiso(request, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.patch("/permisos/{permiso_id}/desactivar", response_model=MensajeResponse)
 def desactivar_permiso_endpoint(
     permiso_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> MensajeResponse:
-    return eliminar_permiso(permiso_id, usuario_actual)
+    return eliminar_permiso(permiso_id, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.patch("/permisos/{permiso_id}/activar", response_model=MensajeResponse)
 def activar_permiso_endpoint(
     permiso_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> MensajeResponse:
-    return reactivar_permiso(permiso_id, usuario_actual)
+    return reactivar_permiso(permiso_id, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.post("/roles/{rol_id}/permisos/{permiso_id}", response_model=MensajeResponse)
 def asignar_permiso_endpoint(
     rol_id: int,
     permiso_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> MensajeResponse:
-    return asignar_permiso(rol_id, permiso_id, usuario_actual)
+    return asignar_permiso(rol_id, permiso_id, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.patch(
@@ -119,9 +136,10 @@ def asignar_permiso_endpoint(
 def quitar_permiso_endpoint(
     rol_id: int,
     permiso_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> MensajeResponse:
-    return quitar_permiso(rol_id, permiso_id, usuario_actual)
+    return quitar_permiso(rol_id, permiso_id, usuario_actual, _ip(http_request), _ua(http_request))
 
 
 @router.patch(
@@ -131,6 +149,7 @@ def quitar_permiso_endpoint(
 def activar_permiso_rol_endpoint(
     rol_id: int,
     permiso_id: int,
+    http_request: Request,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> MensajeResponse:
-    return reactivar_permiso_rol(rol_id, permiso_id, usuario_actual)
+    return reactivar_permiso_rol(rol_id, permiso_id, usuario_actual, _ip(http_request), _ua(http_request))

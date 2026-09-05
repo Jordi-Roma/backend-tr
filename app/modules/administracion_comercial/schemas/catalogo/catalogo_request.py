@@ -6,6 +6,7 @@ from pydantic import BaseModel, field_validator
 # ── CATEGORÍA ──────────────────────────────────────────────────────────────
 
 class CrearCategoriaRequest(BaseModel):
+    categoria_padre_id: int | None = None
     nombre: str
     descripcion: str | None = None
 
@@ -30,6 +31,7 @@ class CrearCategoriaRequest(BaseModel):
 
 
 class ActualizarCategoriaRequest(BaseModel):
+    categoria_padre_id: int | None = None
     nombre: str
     descripcion: str | None = None
 
@@ -169,3 +171,53 @@ class ActualizarColorRequest(BaseModel):
             )
 
         return hex_val
+
+
+# ── MARCA ──────────────────────────────────────────────────────────────────
+
+class CrearMarcaRequest(BaseModel):
+    nombre: str
+    descripcion: str | None = None
+
+    @field_validator("nombre")
+    @classmethod
+    def validar_nombre(cls, valor: str) -> str:
+        nombre = valor.strip()
+
+        if not nombre:
+            raise ValueError("El nombre de la marca es obligatorio.")
+
+        return nombre
+
+    @field_validator("descripcion")
+    @classmethod
+    def validar_descripcion(cls, valor: str | None) -> str | None:
+        if valor is None:
+            return None
+
+        descripcion = valor.strip()
+        return descripcion or None
+
+
+class ActualizarMarcaRequest(BaseModel):
+    nombre: str
+    descripcion: str | None = None
+
+    @field_validator("nombre")
+    @classmethod
+    def validar_nombre(cls, valor: str) -> str:
+        nombre = valor.strip()
+
+        if not nombre:
+            raise ValueError("El nombre de la marca es obligatorio.")
+
+        return nombre
+
+    @field_validator("descripcion")
+    @classmethod
+    def validar_descripcion(cls, valor: str | None) -> str | None:
+        if valor is None:
+            return None
+
+        descripcion = valor.strip()
+        return descripcion or None
