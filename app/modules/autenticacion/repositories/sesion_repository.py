@@ -190,6 +190,58 @@ def cerrar_sesion_activa(usuario_id: int) -> bool:
         connection.close()
 
 
+def cerrar_sesion_por_id(sesion_id: int, usuario_id: int) -> bool:
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            """
+            UPDATE sesion
+            SET activa = FALSE,
+                fecha_cierre = CURRENT_TIMESTAMP
+            WHERE id = %s
+              AND usuario_id = %s
+              AND activa = TRUE
+              AND fecha_cierre IS NULL;
+            """,
+            (sesion_id, usuario_id),
+        )
+        actualizada = cursor.rowcount > 0
+        connection.commit()
+        return actualizada
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def sesion_esta_activa(sesion_id: int, usuario_id: int) -> bool:
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            """
+            SELECT 1
+            FROM sesion
+            WHERE id = %s
+              AND usuario_id = %s
+              AND activa = TRUE
+              AND fecha_cierre IS NULL
+              AND fecha_expiracion > CURRENT_TIMESTAMP
+            LIMIT 1;
+            """,
+            (sesion_id, usuario_id),
+        )
+        return cursor.fetchone() is not None
+    finally:
+        cursor.close()
+        connection.close()
+
+
 def registrar_bitacora_login(
     usuario_id: int | None,
     accion: str,

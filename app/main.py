@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import CORS_ORIGINS
 from app.database.connection import get_connection
 from app.modules.administracion_comercial.router.ciudad_sucursal_router import (
     router as ciudad_sucursal_router,
@@ -40,11 +41,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:4200",
-        "http://127.0.0.1:4200",
-        "https://frontend-tr-production.up.railway.app",
-    ],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -4,7 +4,7 @@ from fastapi import HTTPException
 
 from app.core.security import crear_token_acceso, verificar_password, verificar_token_acceso
 from app.modules.autenticacion.repositories.sesion_repository import (
-    cerrar_sesion_activa,
+    cerrar_sesion_por_id,
     crear_sesion,
     incrementar_intento_fallido,
     obtener_usuario_para_login,
@@ -97,15 +97,16 @@ def iniciar_sesion(
     roles = [str(rol) for rol in usuario["roles"]]
 
     reiniciar_intentos_login(usuario_id)
+    sesion = crear_sesion(usuario_id)
     access_token = crear_token_acceso(
         {
             "sub": str(usuario_id),
+            "sid": str(sesion["id"]),
             "username": str(usuario["username"]),
             "correo": str(usuario["correo"]),
             "roles": roles,
         }
     )
-    crear_sesion(usuario_id)
     registrar_bitacora_login(
         usuario_id,
         "INICIO_SESION_EXITOSO",
@@ -146,13 +147,18 @@ def cerrar_sesion(
     if not isinstance(usuario_id_texto, str) or not usuario_id_texto.isdigit():
         raise HTTPException(status_code=401, detail="Token invalido.")
 
+    sesion_id_texto = payload.get("sid")
+
+    if not isinstance(sesion_id_texto, str) or not sesion_id_texto.isdigit():
+        raise HTTPException(status_code=401, detail="Token sin sesion asociada.")
+
     usuario_id = int(usuario_id_texto)
-    sesion_cerrada = cerrar_sesion_activa(usuario_id)
+    sesion_cerrada = cerrar_sesion_por_id(int(sesion_id_texto), usuario_id)
 
     if not sesion_cerrada:
         raise HTTPException(
-            status_code=404,
-            detail="No existe una sesion activa para cerrar.",
+            status_code=401,
+            detail="La sesion ya no esta activa.",
         )
 
     registrar_bitacora_login(

@@ -26,6 +26,7 @@ from app.modules.administracion_comercial.services.ciudad_sucursal_service impor
     registrar_sucursal,
 )
 from app.modules.autenticacion.dependencies.admin_required import requerir_admin
+from app.modules.autenticacion.dependencies.usuario_actual import obtener_usuario_actual
 
 router = APIRouter(
     prefix="/api/v1",
@@ -44,7 +45,7 @@ def _ua(req: Request) -> str | None:
 
 @router.get("/ciudades", response_model=list[CiudadResponse])
 def listar_ciudades_endpoint(
-    usuario_actual: dict[str, object] = Depends(requerir_admin),
+    usuario_actual: dict[str, object] = Depends(obtener_usuario_actual),
 ) -> list[CiudadResponse]:
     return obtener_ciudades()
 

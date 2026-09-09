@@ -1,9 +1,11 @@
 from fastapi import HTTPException
 
 from app.modules.bitacora.bitacora_repository import registrar_bitacora
+from app.core.security import hashear_password
 
 from app.modules.autenticacion.repositories.usuario_admin_repository import (
     actualizar_usuario,
+    crear_usuario_con_rol,
     activar_rol_de_usuario,
     activar_usuario,
     asignar_rol_a_usuario,
@@ -17,6 +19,7 @@ from app.modules.autenticacion.repositories.usuario_admin_repository import (
 )
 from app.modules.autenticacion.schemas.usuario_admin.usuario_admin_request import (
     ActualizarUsuarioRequest,
+    CrearUsuarioAdminRequest,
 )
 from app.modules.autenticacion.schemas.usuario_admin.usuario_admin_response import (
     MensajeResponse,
@@ -27,6 +30,41 @@ from app.modules.autenticacion.schemas.usuario_admin.usuario_admin_response impo
 def obtener_usuarios() -> list[UsuarioAdminResponse]:
     usuarios = listar_usuarios()
     return [construir_usuario_response(usuario) for usuario in usuarios]
+
+
+def registrar_usuario(
+    request: CrearUsuarioAdminRequest,
+    usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
+) -> UsuarioAdminResponse:
+    username = request.username.strip().lower()
+    correo = request.correo.strip().lower()
+
+    if obtener_usuario_por_username(username) is not None:
+        raise HTTPException(status_code=409, detail="El username ya esta registrado.")
+    if obtener_usuario_por_correo(correo) is not None:
+        raise HTTPException(status_code=409, detail="El correo ya esta registrado.")
+
+    rol = obtener_rol_por_id(request.rol_id)
+    if rol is None or rol["activo"] is not True:
+        raise HTTPException(status_code=404, detail="Rol no encontrado.")
+
+    try:
+        password_hash = hashear_password(request.password)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+    usuario = crear_usuario_con_rol(
+        request.nombre.strip(),
+        request.apellido.strip(),
+        username,
+        correo,
+        password_hash,
+        request.rol_id,
+        int(usuario_actual["id"]),
+    )
+    return construir_usuario_response(usuario)
 
 
 def obtener_usuario(usuario_id: int) -> UsuarioAdminResponse:
