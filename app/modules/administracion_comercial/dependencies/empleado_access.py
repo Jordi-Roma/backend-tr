@@ -11,7 +11,25 @@ def requerir_admin_o_encargado(
     if "ADMINISTRADOR" not in roles and "ENCARGADO_SUCURSAL" not in roles:
         raise HTTPException(
             status_code=403,
-            detail="No tiene permisos para gestionar empleados.",
+            detail="No tiene permisos para realizar esta accion.",
+        )
+
+    return usuario_actual
+
+
+def requerir_admin_o_encargado_o_cajero(
+    usuario_actual: dict[str, object] = Depends(obtener_usuario_actual),
+) -> dict[str, object]:
+    roles = [str(rol) for rol in usuario_actual.get("roles", [])]
+
+    if (
+        "ADMINISTRADOR" not in roles
+        and "ENCARGADO_SUCURSAL" not in roles
+        and "CAJERO" not in roles
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="No tiene permisos para realizar esta accion.",
         )
 
     return usuario_actual
