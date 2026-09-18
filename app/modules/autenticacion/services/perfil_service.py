@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 
 from app.core.security import hashear_password, verificar_password
-from app.modules.bitacora.bitacora_repository import registrar_bitacora
+from app.modules.autenticacion.repositories.bitacora_repository import registrar_bitacora
 from app.modules.autenticacion.repositories.perfil_repository import (
     actualizar_direccion_cliente,
     actualizar_password_hash,

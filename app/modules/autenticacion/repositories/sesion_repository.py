@@ -1,7 +1,7 @@
 from psycopg2.extras import RealDictCursor
 
 from app.database.connection import get_connection
-from app.modules.bitacora.bitacora_repository import registrar_bitacora
+from app.modules.autenticacion.repositories.bitacora_repository import registrar_bitacora
 
 
 def obtener_usuario_para_login(identificador: str) -> dict[str, object] | None:

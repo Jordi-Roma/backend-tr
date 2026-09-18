@@ -16,6 +16,8 @@ SQL_FILES = [
     "database/migracion_ciclo2_bloque1_catalogo_disponibilidad.sql",
     "database/migracion_ciclo2_bloque2_carrito_reservas.sql",
     "database/migracion_ciclo2_bloque3_inventario_ventas.sql",
+    "database/migracion_cu22_recomendaciones.sql",
+    "database/migracion_pasarela_pago_stripe.sql",
 ]
 
 def ejecutar_scripts():

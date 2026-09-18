@@ -2,7 +2,7 @@ from fastapi import HTTPException
 
 from app.core.security import hashear_password
 from app.modules.autenticacion.entities.usuario_entity import UsuarioEntity
-from app.modules.bitacora.bitacora_repository import registrar_bitacora
+from app.modules.autenticacion.repositories.bitacora_repository import registrar_bitacora
 from app.modules.autenticacion.repositories.usuario_repository import (
     crear_usuario_cliente,
     obtener_usuario_por_correo,

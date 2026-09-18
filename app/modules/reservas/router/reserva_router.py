@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends
 
 from app.modules.autenticacion.dependencies.usuario_actual import obtener_usuario_actual
-from app.modules.administracion_comercial.dependencies.empleado_access import requerir_admin_o_encargado
-from app.modules.reservas.schemas.reserva_request import (
+from app.modules.administracion.dependencies.empleado_access import requerir_admin_o_encargado
+from app.modules.reservas.schemas.reservas.reserva_request import (
     CambiarEstadoReservaRequest,
     CrearReservaDesdeCarritoRequest,
 )
-from app.modules.reservas.schemas.reserva_response import ReservaResponse
+from app.modules.reservas.schemas.reservas.reserva_response import ReservaResponse
 from app.modules.reservas.services.reserva_service import (
     cambiar_estado,
     cancelar_mi_reserva,

@@ -8,11 +8,11 @@ from app.modules.reservas.repositories.carrito_repository import (
     obtener_cliente_id_por_usuario,
     vaciar_carrito,
 )
-from app.modules.reservas.schemas.carrito_request import (
+from app.modules.reservas.schemas.carrito.carrito_request import (
     ActualizarCarritoItemRequest,
     AgregarCarritoItemRequest,
 )
-from app.modules.reservas.schemas.carrito_response import CarritoResponse
+from app.modules.reservas.schemas.carrito.carrito_response import CarritoResponse
 
 
 def obtener_carrito_cliente(usuario_actual: dict[str, object]) -> CarritoResponse:

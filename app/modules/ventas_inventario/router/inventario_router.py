@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends
 
-from app.modules.administracion_comercial.dependencies.empleado_access import (
+from app.modules.administracion.dependencies.empleado_access import (
     requerir_admin_o_encargado,
     requerir_admin_o_encargado_o_cajero,
 )
-from app.modules.ventas_inventario.schemas.inventario_schemas import (
+from app.modules.ventas_inventario.schemas.inventario.inventario_schemas import (
     ActualizarStockMinimoRequest,
     CrearTransferenciaRequest,
     CrearVentaPresencialRequest,

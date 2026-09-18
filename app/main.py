@@ -2,35 +2,39 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import CORS_ORIGINS
 from app.database.connection import get_connection
-from app.modules.administracion_comercial.router.ciudad_sucursal_router import (
+from app.modules.administracion.router.ciudad_sucursal_router import (
     router as ciudad_sucursal_router,
 )
-from app.modules.administracion_comercial.router.catalogo_router import (
+from app.modules.administracion.router.catalogo_router import (
     router as catalogo_router,
 )
-from app.modules.administracion_comercial.router.catalogo_publico_router import (
+from app.modules.catalogo.router.catalogo_publico_router import (
     router as catalogo_publico_router,
 )
-from app.modules.administracion_comercial.router.empleado_router import (
+from app.modules.administracion.router.empleado_router import (
     router as empleado_router,
 )
-from app.modules.administracion_comercial.router.proveedor_router import (
+from app.modules.administracion.router.proveedor_router import (
     router as proveedor_router,
 )
-from app.modules.administracion_comercial.router.temporada_router import (
+from app.modules.administracion.router.temporada_router import (
     router as temporada_router,
 )
-from app.modules.administracion_comercial.router.coleccion_router import (
+from app.modules.administracion.router.coleccion_router import (
     router as coleccion_router,
 )
-from app.modules.administracion_comercial.router.producto_router import router as producto_router
-from app.modules.administracion_comercial.router.variante_router import router as variante_router
-from app.modules.bitacora.bitacora_router import router as bitacora_router
+from app.modules.administracion.router.producto_router import router as producto_router
+from app.modules.administracion.router.variante_router import router as variante_router
+from app.modules.autenticacion.router.bitacora_router import router as bitacora_router
 from app.modules.reservas.router.carrito_router import router as carrito_router
 from app.modules.reservas.router.reserva_router import router as reserva_router
 from app.modules.ventas_inventario.router.inventario_router import (
     router as ventas_inventario_router,
 )
+from app.modules.ventas_inventario.router.pago_router import router as pago_router
+from app.modules.inteligencia.router.reporte_router import router as reporte_router
+from app.modules.inteligencia.router.recomendacion_router import router as recomendacion_router
+from app.modules.inteligencia.router.asistente_router import router as asistente_router
 from app.modules.autenticacion.router.perfil_router import router as perfil_router
 from app.modules.autenticacion.router.registro_router import router as registro_router
 from app.modules.autenticacion.router.rol_permiso_router import (
@@ -73,7 +77,11 @@ app.include_router(variante_router)
 app.include_router(carrito_router)
 app.include_router(reserva_router)
 app.include_router(ventas_inventario_router)
+app.include_router(pago_router)
 app.include_router(bitacora_router)
+app.include_router(reporte_router)
+app.include_router(recomendacion_router)
+app.include_router(asistente_router)
 
 
 @app.get("/api/v1/health")

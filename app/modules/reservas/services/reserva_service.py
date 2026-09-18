@@ -10,11 +10,11 @@ from app.modules.reservas.repositories.reserva_repository import (
     obtener_reserva_cliente,
     obtener_sucursal_empleado_usuario,
 )
-from app.modules.reservas.schemas.reserva_request import (
+from app.modules.reservas.schemas.reservas.reserva_request import (
     CambiarEstadoReservaRequest,
     CrearReservaDesdeCarritoRequest,
 )
-from app.modules.reservas.schemas.reserva_response import ReservaResponse
+from app.modules.reservas.schemas.reservas.reserva_response import ReservaResponse
 
 ESTADOS_RESERVA = {"PENDIENTE", "PREPARADA", "EN_ATENCION", "COMPLETADA", "CANCELADA", "VENCIDA"}
 

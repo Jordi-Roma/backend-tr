@@ -6,7 +6,7 @@ from psycopg2.extras import RealDictCursor
 from app.database.connection import get_connection
 
 TIPOS_SUMA = {"ENTRADA", "AJUSTE_POSITIVO", "TRANSFERENCIA_ENTRADA"}
-TIPOS_RESTA = {"SALIDA", "AJUSTE_NEGATIVO", "TRANSFERENCIA_SALIDA", "VENTA_PRESENCIAL"}
+TIPOS_RESTA = {"SALIDA", "AJUSTE_NEGATIVO", "TRANSFERENCIA_SALIDA", "VENTA_PRESENCIAL", "VENTA_DIGITAL"}
 
 
 def obtener_sucursal_empleado(usuario_id: int) -> int | None:

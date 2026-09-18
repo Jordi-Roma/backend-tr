@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends
 
 from app.modules.autenticacion.dependencies.usuario_actual import obtener_usuario_actual
-from app.modules.reservas.schemas.carrito_request import (
+from app.modules.reservas.schemas.carrito.carrito_request import (
     ActualizarCarritoItemRequest,
     AgregarCarritoItemRequest,
 )
-from app.modules.reservas.schemas.carrito_response import CarritoResponse
+from app.modules.reservas.schemas.carrito.carrito_response import CarritoResponse
 from app.modules.reservas.services.carrito_service import (
     actualizar_item,
     agregar_item,

@@ -13,7 +13,7 @@ from app.modules.ventas_inventario.repositories.inventario_repository import (
     obtener_venta,
     registrar_movimiento_manual,
 )
-from app.modules.ventas_inventario.schemas.inventario_schemas import (
+from app.modules.ventas_inventario.schemas.inventario.inventario_schemas import (
     ActualizarStockMinimoRequest,
     CrearTransferenciaRequest,
     CrearVentaPresencialRequest,
