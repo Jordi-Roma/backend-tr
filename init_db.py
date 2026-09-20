@@ -18,6 +18,7 @@ SQL_FILES = [
     "database/migracion_ciclo2_bloque3_inventario_ventas.sql",
     "database/migracion_cu22_recomendaciones.sql",
     "database/migracion_pasarela_pago_stripe.sql",
+    "database/migracion_venta_digital_movimiento.sql",
     "database/migracion_roles_permisos_base.sql",
     "database/migracion_password_reset.sql",
 ]

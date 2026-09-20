@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS movimiento_inventario (
             'AJUSTE_NEGATIVO',
             'TRANSFERENCIA_ENTRADA',
             'TRANSFERENCIA_SALIDA',
-            'VENTA_PRESENCIAL'
+            'VENTA_PRESENCIAL',
+            'VENTA_DIGITAL'
         )
     ),
     CONSTRAINT ck_movimiento_cantidad CHECK (cantidad > 0),
