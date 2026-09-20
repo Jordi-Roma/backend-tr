@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Request
 
 from app.modules.autenticacion.dependencies.admin_required import requerir_admin
 from app.modules.autenticacion.schemas.rol_permiso.rol_permiso_request import (
+    ActualizarPermisosRolRequest,
     ActualizarRolRequest,
     CrearPermisoRequest,
     CrearRolRequest,
@@ -9,14 +10,17 @@ from app.modules.autenticacion.schemas.rol_permiso.rol_permiso_request import (
 from app.modules.autenticacion.schemas.rol_permiso.rol_permiso_response import (
     MensajeResponse,
     PermisoResponse,
+    RolPermisosResponse,
     RolResponse,
 )
 from app.modules.autenticacion.services.rol_permiso_service import (
+    actualizar_permisos_por_rol,
     asignar_permiso,
     editar_rol,
     eliminar_permiso,
     eliminar_rol,
     obtener_permisos,
+    obtener_permisos_por_rol,
     obtener_roles,
     quitar_permiso,
     reactivar_permiso,
@@ -90,6 +94,30 @@ def listar_permisos_endpoint(
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> list[PermisoResponse]:
     return obtener_permisos()
+
+
+@router.get("/roles/{rol_id}/permisos", response_model=RolPermisosResponse)
+def listar_permisos_rol_endpoint(
+    rol_id: int,
+    usuario_actual: dict[str, object] = Depends(requerir_admin),
+) -> RolPermisosResponse:
+    return obtener_permisos_por_rol(rol_id)
+
+
+@router.put("/roles/{rol_id}/permisos", response_model=RolPermisosResponse)
+def actualizar_permisos_rol_endpoint(
+    rol_id: int,
+    request: ActualizarPermisosRolRequest,
+    http_request: Request,
+    usuario_actual: dict[str, object] = Depends(requerir_admin),
+) -> RolPermisosResponse:
+    return actualizar_permisos_por_rol(
+        rol_id,
+        request,
+        usuario_actual,
+        _ip(http_request),
+        _ua(http_request),
+    )
 
 
 @router.post("/permisos", response_model=PermisoResponse)

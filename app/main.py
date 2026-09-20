@@ -23,6 +23,9 @@ from app.modules.administracion_comercial.router.producto_router import router a
 from app.modules.administracion_comercial.router.variante_router import router as variante_router
 from app.modules.bitacora.bitacora_router import router as bitacora_router
 from app.modules.autenticacion.router.perfil_router import router as perfil_router
+from app.modules.autenticacion.router.password_reset_router import (
+    router as password_reset_router,
+)
 from app.modules.autenticacion.router.registro_router import router as registro_router
 from app.modules.autenticacion.router.rol_permiso_router import (
     router as rol_permiso_router,
@@ -52,6 +55,7 @@ app.add_middleware(
 
 app.include_router(registro_router)
 app.include_router(sesion_router)
+app.include_router(password_reset_router)
 app.include_router(perfil_router)
 app.include_router(rol_permiso_router)
 app.include_router(usuario_admin_router)

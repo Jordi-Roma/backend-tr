@@ -14,21 +14,25 @@ from app.modules.autenticacion.repositories.rol_permiso_repository import (
     desactivar_permiso_de_rol,
     desactivar_rol,
     listar_permisos,
+    listar_permisos_de_rol,
     listar_roles,
     obtener_permiso_por_id,
     obtener_permiso_por_modulo_accion,
     obtener_permiso_por_nombre,
     obtener_rol_por_id,
     obtener_rol_por_nombre,
+    reemplazar_permisos_de_rol,
 )
 from app.modules.autenticacion.schemas.rol_permiso.rol_permiso_request import (
     ActualizarRolRequest,
+    ActualizarPermisosRolRequest,
     CrearPermisoRequest,
     CrearRolRequest,
 )
 from app.modules.autenticacion.schemas.rol_permiso.rol_permiso_response import (
     MensajeResponse,
     PermisoResponse,
+    RolPermisosResponse,
     RolResponse,
 )
 
@@ -165,15 +169,71 @@ def obtener_permisos() -> list[PermisoResponse]:
     return [construir_permiso_response(permiso) for permiso in permisos]
 
 
+def obtener_permisos_por_rol(rol_id: int) -> RolPermisosResponse:
+    rol = obtener_rol_por_id(rol_id)
+
+    if rol is None or rol["activo"] is not True:
+        raise HTTPException(status_code=404, detail="Rol no encontrado.")
+
+    permiso_ids = listar_permisos_de_rol(rol_id)
+
+    rol_response = construir_rol_response(
+        {
+            **rol,
+            "cantidad_permisos": len(permiso_ids),
+        }
+    )
+    return RolPermisosResponse(rol=rol_response, permiso_ids=permiso_ids)
+
+
+def actualizar_permisos_por_rol(
+    rol_id: int,
+    request: ActualizarPermisosRolRequest,
+    usuario_actual: dict[str, object],
+    direccion_ip: str | None = None,
+    user_agent: str | None = None,
+) -> RolPermisosResponse:
+    rol = obtener_rol_por_id(rol_id)
+
+    if rol is None or rol["activo"] is not True:
+        raise HTTPException(status_code=404, detail="Rol no encontrado.")
+
+    try:
+        permiso_ids = reemplazar_permisos_de_rol(
+            rol_id,
+            request.permiso_ids,
+            int(usuario_actual["id"]),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    registrar_bitacora(
+        usuario_id=int(usuario_actual["id"]),
+        accion="ACTUALIZAR_PERMISOS",
+        modulo="ROLES",
+        resultado="EXITOSO",
+        descripcion=f"Permisos actualizados para rol id={rol_id}",
+        direccion_ip=direccion_ip,
+        user_agent=user_agent,
+    )
+    rol_response = construir_rol_response(
+        {
+            **rol,
+            "cantidad_permisos": len(permiso_ids),
+        }
+    )
+    return RolPermisosResponse(rol=rol_response, permiso_ids=permiso_ids)
+
+
 def registrar_permiso(
     request: CrearPermisoRequest,
     usuario_actual: dict[str, object],
     direccion_ip: str | None = None,
     user_agent: str | None = None,
 ) -> PermisoResponse:
-    nombre = request.nombre.strip().upper()
-    modulo = request.modulo.strip().upper()
-    accion = request.accion.strip().upper()
+    nombre = request.nombre.strip()
+    modulo = request.modulo.strip().upper().replace(" ", "_")
+    accion = request.accion.strip().lower()
 
     permiso_por_nombre = obtener_permiso_por_nombre(nombre)
 
@@ -364,6 +424,7 @@ def construir_rol_response(rol: dict[str, object]) -> RolResponse:
         nombre=str(rol["nombre"]),
         descripcion=None if rol["descripcion"] is None else str(rol["descripcion"]),
         activo=bool(rol["activo"]),
+        cantidad_permisos=int(rol.get("cantidad_permisos", 0) or 0),
     )
 
 
