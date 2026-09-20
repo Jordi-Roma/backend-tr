@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.modules.catalogo.vestidor.schemas.vestidor_asset_schema import PrendaARResponse
 from app.modules.catalogo.vestidor.schemas.vestidor_sesion_schema import (
@@ -54,35 +54,69 @@ def get_vestidor_config() -> dict[str, str]:
     }
 
 
-from fastapi import UploadFile, File, Form, Request
-from app.modules.catalogo.vestidor.vestidor_ia_service import procesar_tryon_ia
+try:
+    import multipart  # noqa: F401
+    from fastapi import File, Form, Request, UploadFile
+
+    MULTIPART_DISPONIBLE = True
+except ModuleNotFoundError:
+    MULTIPART_DISPONIBLE = False
 
 
-@router.post(
-    "/probar-ia",
-    summary="Procesar prueba virtual de prenda sobre foto de usuario con IA",
-)
-async def post_probar_ia(
-    request: Request,
-    imagen: UploadFile = File(...),
-    producto_id: int = Form(...),
-    talla: str | None = Form(None),
-    color: str | None = Form(None),
-    cliente_id: int | None = Form(None),
-) -> dict[str, object]:
-    contenido = await imagen.read()
-    host_base_url = str(request.base_url).rstrip("/")
-    forwarded_host = request.headers.get("x-forwarded-host")
-    forwarded_proto = request.headers.get("x-forwarded-proto", "https")
-    if forwarded_host:
-        host_base_url = f"{forwarded_proto}://{forwarded_host}"
+if MULTIPART_DISPONIBLE:
 
-    return procesar_tryon_ia(
-        imagen_bytes=contenido,
-        producto_id=producto_id,
-        talla=talla,
-        color=color,
-        cliente_id=cliente_id,
-        host_base_url=host_base_url,
+    @router.post(
+        "/probar-ia",
+        summary="Procesar prueba virtual de prenda sobre foto de usuario con IA",
     )
+    async def post_probar_ia(
+        request: Request,
+        imagen: UploadFile = File(...),
+        producto_id: int = Form(...),
+        talla: str | None = Form(None),
+        color: str | None = Form(None),
+        cliente_id: int | None = Form(None),
+    ) -> dict[str, object]:
+        try:
+            from app.modules.catalogo.vestidor.vestidor_ia_service import procesar_tryon_ia
+        except ModuleNotFoundError as error:
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "El motor de prueba virtual con IA no tiene sus dependencias "
+                    "instaladas. Instala las dependencias del backend y reinicia el servidor."
+                ),
+            ) from error
+
+        contenido = await imagen.read()
+        host_base_url = str(request.base_url).rstrip("/")
+        forwarded_host = request.headers.get("x-forwarded-host")
+        forwarded_proto = request.headers.get("x-forwarded-proto", "https")
+        if forwarded_host:
+            host_base_url = f"{forwarded_proto}://{forwarded_host}"
+
+        return procesar_tryon_ia(
+            imagen_bytes=contenido,
+            producto_id=producto_id,
+            talla=talla,
+            color=color,
+            cliente_id=cliente_id,
+            host_base_url=host_base_url,
+        )
+
+else:
+
+    @router.post(
+        "/probar-ia",
+        summary="Procesar prueba virtual de prenda sobre foto de usuario con IA",
+    )
+    async def post_probar_ia_no_disponible() -> dict[str, object]:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "El motor de prueba virtual con IA requiere python-multipart y "
+                "sus dependencias de visión. Instala las dependencias del backend "
+                "y reinicia el servidor."
+            ),
+        )
 
