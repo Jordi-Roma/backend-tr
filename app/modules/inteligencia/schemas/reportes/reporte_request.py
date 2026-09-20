@@ -27,3 +27,20 @@ class ReporteRequest(BaseModel):
 
 class InterpretarRequest(BaseModel):
     texto: str = Field(min_length=3, max_length=500)
+
+
+class CrearReporteProgramadoRequest(BaseModel):
+    titulo: str = Field(min_length=3, max_length=150)
+    tipo: TipoReporte
+    frecuencia: Literal["DIARIA", "SEMANAL", "MENSUAL"]
+    hora: str = Field(default="08:00", max_length=10)
+    dia: str | None = Field(default=None, max_length=20)
+    formato: Literal["PDF", "EXCEL"] = "PDF"
+    destinatario_email: str = Field(min_length=5, max_length=200)
+    sucursal_id: int | None = Field(default=None, gt=0)
+    solo_bajo_stock: bool = False
+    activo: bool = True
+
+
+class ActualizarEstadoProgramadoRequest(BaseModel):
+    activo: bool

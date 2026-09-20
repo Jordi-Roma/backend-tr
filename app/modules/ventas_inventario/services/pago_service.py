@@ -87,21 +87,36 @@ def _crear_session_stripe(orden: dict) -> dict:
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:4200")
     if not secret_key:
         raise HTTPException(status_code=503, detail="STRIPE_SECRET_KEY no esta configurada en el backend.")
+
+    # Si se mantiene la clave placeholder o modo prueba, retornar sesión simulada
+    if secret_key.startswith("sk_test_placeholder") or secret_key == "MODO_PRUEBA":
+        return {
+            "id": f"cs_test_simulada_{orden['id']}",
+            "url": f"{frontend_url}/pago/resultado?orden_id={orden['id']}&estado=success",
+            "payment_intent": f"pi_simulada_{orden['id']}",
+        }
+
     try:
         import stripe
     except ModuleNotFoundError as error:
         raise HTTPException(status_code=503, detail="La dependencia stripe no esta instalada.") from error
 
-    stripe.api_key = secret_key
-    session = stripe.checkout.Session.create(
-        mode="payment",
-        payment_method_types=["card"],
-        line_items=[_line_item(item) for item in orden["items"]],
-        success_url=f"{frontend_url}/pago/resultado?orden_id={orden['id']}&estado=success",
-        cancel_url=f"{frontend_url}/pago/cancelado?orden_id={orden['id']}&estado=cancel",
-        metadata={"orden_id": str(orden["id"]), "venta_id": str(orden["venta_id"])},
-    )
-    return {"id": session.id, "url": session.url, "payment_intent": session.payment_intent}
+    try:
+        stripe.api_key = secret_key
+        session = stripe.checkout.Session.create(
+            mode="payment",
+            payment_method_types=["card"],
+            line_items=[_line_item(item) for item in orden["items"]],
+            success_url=f"{frontend_url}/pago/resultado?orden_id={orden['id']}&estado=success",
+            cancel_url=f"{frontend_url}/pago/cancelado?orden_id={orden['id']}&estado=cancel",
+            metadata={"orden_id": str(orden["id"]), "venta_id": str(orden["venta_id"])},
+        )
+        return {"id": session.id, "url": session.url, "payment_intent": session.payment_intent}
+    except Exception as error:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Error al conectar con Stripe: {str(error)}. Verifica tu STRIPE_SECRET_KEY en el backend.",
+        ) from error
 
 
 def _line_item(item: dict) -> dict:
