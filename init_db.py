@@ -21,6 +21,10 @@ SQL_FILES = [
     "database/migracion_venta_digital_movimiento.sql",
     "database/migracion_roles_permisos_base.sql",
     "database/migracion_password_reset.sql",
+    "database/migracion_cu24_admin_ar_medidas.sql",
+    "database/migracion_cu24_talla_tipo_prenda.sql",
+    "database/migracion_cu24_vestidor.sql",
+    "database/migracion_reportes_programados.sql",
 ]
 
 
