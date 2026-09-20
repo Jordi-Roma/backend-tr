@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 
-from app.modules.bitacora.bitacora_repository import registrar_bitacora
+from app.modules.autenticacion.repositories.bitacora_repository import registrar_bitacora
 
 from app.modules.autenticacion.repositories.rol_permiso_repository import (
     actualizar_rol,

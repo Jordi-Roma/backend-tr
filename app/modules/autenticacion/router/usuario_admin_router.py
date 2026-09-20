@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, Request
 from app.modules.autenticacion.dependencies.admin_required import requerir_admin
 from app.modules.autenticacion.schemas.usuario_admin.usuario_admin_request import (
     ActualizarUsuarioRequest,
+    CrearUsuarioAdminRequest,
 )
 from app.modules.autenticacion.schemas.usuario_admin.usuario_admin_response import (
     MensajeResponse,
@@ -16,6 +17,7 @@ from app.modules.autenticacion.services.usuario_admin_service import (
     eliminar_usuario,
     obtener_usuario,
     obtener_usuarios,
+    registrar_usuario,
     reactivar_usuario,
 )
 
@@ -39,6 +41,17 @@ def listar_usuarios_endpoint(
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> list[UsuarioAdminResponse]:
     return obtener_usuarios()
+
+
+@router.post("/usuarios", response_model=UsuarioAdminResponse, status_code=201)
+def crear_usuario_endpoint(
+    request: CrearUsuarioAdminRequest,
+    http_request: Request,
+    usuario_actual: dict[str, object] = Depends(requerir_admin),
+) -> UsuarioAdminResponse:
+    return registrar_usuario(
+        request, usuario_actual, _ip(http_request), _ua(http_request)
+    )
 
 
 @router.get("/usuarios/{usuario_id}", response_model=UsuarioAdminResponse)

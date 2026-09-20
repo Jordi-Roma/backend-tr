@@ -19,7 +19,9 @@ SQL_FILES = [
     "database/migracion_cu22_recomendaciones.sql",
     "database/migracion_pasarela_pago_stripe.sql",
     "database/migracion_roles_permisos_base.sql",
+    "database/migracion_password_reset.sql",
 ]
+
 
 def ejecutar_scripts():
     print("Iniciando configuracion de base de datos...")
@@ -42,17 +44,17 @@ def ejecutar_scripts():
                 conn.rollback()
                 print(f"Nota en {rel_path}: {ex}")
 
-        # Migracion categoria_padre_id
         try:
             cur.execute("ALTER TABLE categoria ADD COLUMN IF NOT EXISTS categoria_padre_id BIGINT NULL;")
             conn.commit()
             print("OK: Columna categoria_padre_id verificada.")
-        except Exception as ex:
+        except Exception:
             conn.rollback()
 
         print("Base de datos configurada correctamente.")
     finally:
         conn.close()
+
 
 if __name__ == "__main__":
     ejecutar_scripts()

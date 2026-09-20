@@ -49,3 +49,23 @@ class ActualizarUsuarioRequest(BaseModel):
             raise ValueError("El correo no tiene un formato valido.")
 
         return correo
+
+
+class CrearUsuarioAdminRequest(ActualizarUsuarioRequest):
+    password: str
+    rol_id: int
+
+    @field_validator("password")
+    @classmethod
+    def validar_password_obligatorio(cls, valor: str) -> str:
+        password = valor.strip()
+        if not password:
+            raise ValueError("La contrasena es obligatoria.")
+        return password
+
+    @field_validator("rol_id")
+    @classmethod
+    def validar_rol(cls, valor: int) -> int:
+        if valor < 1:
+            raise ValueError("El rol no es valido.")
+        return valor

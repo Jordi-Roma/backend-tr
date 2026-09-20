@@ -3,6 +3,58 @@ from psycopg2.extras import RealDictCursor
 from app.database.connection import get_connection
 
 
+def crear_usuario_con_rol(
+    nombre: str,
+    apellido: str,
+    username: str,
+    correo: str,
+    password_hash: str,
+    rol_id: int,
+    usuario_id_admin: int,
+) -> dict[str, object]:
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        cursor.execute(
+            """
+            INSERT INTO usuario (nombre, apellido, username, correo, password_hash)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id;
+            """,
+            (nombre, apellido, username, correo, password_hash),
+        )
+        usuario = cursor.fetchone()
+        if usuario is None:
+            raise ValueError("No se pudo crear el usuario.")
+
+        usuario_id = int(usuario["id"])
+        cursor.execute(
+            """
+            INSERT INTO usuario_rol (usuario_id, rol_id, activo)
+            VALUES (%s, %s, TRUE);
+            """,
+            (usuario_id, rol_id),
+        )
+        registrar_bitacora_con_cursor(
+            cursor,
+            usuario_id_admin,
+            "CREACION_USUARIO",
+            f"Creacion de usuario id={usuario_id}.",
+        )
+        connection.commit()
+        resultado = obtener_usuario_admin_por_id(usuario_id)
+        if resultado is None:
+            raise ValueError("No se pudo recuperar el usuario creado.")
+        return resultado
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        cursor.close()
+        connection.close()
+
+
 def listar_usuarios() -> list[dict[str, object]]:
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=RealDictCursor)
