@@ -11,6 +11,10 @@ class CrearProductoRequest(BaseModel):
     descripcion: str | None = None
     material: str | None = None
     genero: str | None = None
+    tipo_prenda: str = "SUPERIOR"
+    tipo_corte: str = "REGULAR_FIT"
+    ancho_base_cm: float = 53.0
+    largo_base_cm: float = 72.0
     colecciones_ids: list[int] = []
     proveedores_ids: list[int] = []
     imagenes: list[ImagenProductoRequest] = []
@@ -41,6 +45,10 @@ class ActualizarProductoRequest(BaseModel):
     descripcion: str | None = None
     material: str | None = None
     genero: str | None = None
+    tipo_prenda: str = "SUPERIOR"
+    tipo_corte: str = "REGULAR_FIT"
+    ancho_base_cm: float = 53.0
+    largo_base_cm: float = 72.0
     colecciones_ids: list[int] = []
     proveedores_ids: list[int] = []
     imagenes: list[ImagenProductoRequest] = []

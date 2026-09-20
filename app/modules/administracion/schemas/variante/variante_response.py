@@ -20,6 +20,8 @@ class VarianteResponse(BaseModel):
     color_id: int | None
     color_nombre: str | None
     sku: str
+    ancho_cm: float | None = None
+    largo_cm: float | None = None
     activo: bool
     fecha_creacion: datetime
     precios: list[PrecioResponse]

@@ -17,6 +17,9 @@ class TallaResponse(BaseModel):
     id: int
     nombre: str
     descripcion: str | None
+    tipo_prenda: str = "SUPERIOR"
+    ancho_cm: float | None = None
+    largo_cm: float | None = None
     activo: bool
     fecha_creacion: datetime
 

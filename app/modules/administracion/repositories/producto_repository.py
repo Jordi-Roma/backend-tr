@@ -10,7 +10,11 @@ def listar_productos() -> list[dict[str, object]]:
             """
             SELECT p.id, p.categoria_id, c.nombre as categoria_nombre,
                    p.marca_id, m.nombre as marca_nombre,
-                   p.nombre, p.descripcion, p.material, p.genero, p.activo, p.fecha_creacion
+                   p.nombre, p.descripcion, p.material, p.genero, p.activo, p.fecha_creacion,
+                   COALESCE(p.tipo_prenda, 'SUPERIOR') AS tipo_prenda,
+                   COALESCE(p.tipo_corte, 'REGULAR_FIT') AS tipo_corte,
+                   COALESCE(p.ancho_base_cm, 53.0) AS ancho_base_cm,
+                   COALESCE(p.largo_base_cm, 72.0) AS largo_base_cm
             FROM producto p
             JOIN categoria c ON p.categoria_id = c.id
             LEFT JOIN marca m ON p.marca_id = m.id
@@ -38,7 +42,11 @@ def obtener_producto_por_id(producto_id: int) -> dict[str, object] | None:
             """
             SELECT p.id, p.categoria_id, c.nombre as categoria_nombre,
                    p.marca_id, m.nombre as marca_nombre,
-                   p.nombre, p.descripcion, p.material, p.genero, p.activo, p.fecha_creacion
+                   p.nombre, p.descripcion, p.material, p.genero, p.activo, p.fecha_creacion,
+                   COALESCE(p.tipo_prenda, 'SUPERIOR') AS tipo_prenda,
+                   COALESCE(p.tipo_corte, 'REGULAR_FIT') AS tipo_corte,
+                   COALESCE(p.ancho_base_cm, 53.0) AS ancho_base_cm,
+                   COALESCE(p.largo_base_cm, 72.0) AS largo_base_cm
             FROM producto p
             JOIN categoria c ON p.categoria_id = c.id
             LEFT JOIN marca m ON p.marca_id = m.id
@@ -91,7 +99,11 @@ def crear_producto(
     genero: str | None,
     colecciones_ids: list[int],
     proveedores_ids: list[int],
-    imagenes: list[dict]
+    imagenes: list[dict],
+    tipo_prenda: str = "SUPERIOR",
+    tipo_corte: str = "REGULAR_FIT",
+    ancho_base_cm: float = 53.0,
+    largo_base_cm: float = 72.0,
 ) -> int:
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=RealDictCursor)
@@ -99,11 +111,17 @@ def crear_producto(
     try:
         cursor.execute(
             """
-            INSERT INTO producto (categoria_id, marca_id, nombre, descripcion, material, genero)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO producto (
+                categoria_id, marca_id, nombre, descripcion, material, genero,
+                tipo_prenda, tipo_corte, ancho_base_cm, largo_base_cm
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id;
             """,
-            (categoria_id, marca_id, nombre, descripcion, material, genero),
+            (
+                categoria_id, marca_id, nombre, descripcion, material, genero,
+                tipo_prenda, tipo_corte, ancho_base_cm, largo_base_cm,
+            ),
         )
         producto_id = cursor.fetchone()["id"]
         
@@ -138,7 +156,11 @@ def actualizar_producto(
     genero: str | None,
     colecciones_ids: list[int],
     proveedores_ids: list[int],
-    imagenes: list[dict]
+    imagenes: list[dict],
+    tipo_prenda: str = "SUPERIOR",
+    tipo_corte: str = "REGULAR_FIT",
+    ancho_base_cm: float = 53.0,
+    largo_base_cm: float = 72.0,
 ) -> bool:
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=RealDictCursor)
@@ -152,11 +174,18 @@ def actualizar_producto(
                 nombre = %s,
                 descripcion = %s,
                 material = %s,
-                genero = %s
+                genero = %s,
+                tipo_prenda = %s,
+                tipo_corte = %s,
+                ancho_base_cm = %s,
+                largo_base_cm = %s
             WHERE id = %s
             RETURNING id;
             """,
-            (categoria_id, marca_id, nombre, descripcion, material, genero, producto_id),
+            (
+                categoria_id, marca_id, nombre, descripcion, material, genero,
+                tipo_prenda, tipo_corte, ancho_base_cm, largo_base_cm, producto_id,
+            ),
         )
         if cursor.fetchone() is None:
             connection.rollback()

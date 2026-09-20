@@ -46,7 +46,9 @@ def registrar_variante(
         producto_id=request.producto_id,
         talla_id=request.talla_id,
         color_id=request.color_id,
-        sku=request.sku.strip()
+        sku=request.sku.strip(),
+        ancho_cm=request.ancho_cm,
+        largo_cm=request.largo_cm
     )
 
     registrar_bitacora(
@@ -75,7 +77,9 @@ def editar_variante(
         variante_id=variante_id,
         talla_id=request.talla_id,
         color_id=request.color_id,
-        sku=request.sku.strip()
+        sku=request.sku.strip(),
+        ancho_cm=request.ancho_cm,
+        largo_cm=request.largo_cm
     )
 
     if not actualizado:
@@ -192,6 +196,8 @@ def construir_variante_response(variante: dict[str, object]) -> VarianteResponse
         color_id=int(variante["color_id"]) if variante.get("color_id") else None,
         color_nombre=str(variante["color_nombre"]) if variante.get("color_nombre") else None,
         sku=str(variante["sku"]),
+        ancho_cm=float(variante["ancho_cm"]) if variante.get("ancho_cm") is not None else None,
+        largo_cm=float(variante["largo_cm"]) if variante.get("largo_cm") is not None else None,
         activo=bool(variante["activo"]),
         fecha_creacion=variante["fecha_creacion"],
         precios=precios

@@ -26,6 +26,7 @@ from app.modules.administracion.repositories.catalogo_repository import (
     obtener_color_por_nombre,
     obtener_talla_por_id,
     obtener_talla_por_nombre,
+    obtener_talla_por_nombre_y_tipo,
     obtener_descendientes_categoria,
     activar_marca,
     actualizar_marca,
@@ -247,8 +248,8 @@ def construir_categoria_response(categoria: dict[str, object]) -> CategoriaRespo
 # TALLAS
 # ═══════════════════════════════════════════════════════════════════════════
 
-def obtener_tallas() -> list[TallaResponse]:
-    tallas = listar_tallas()
+def obtener_tallas(tipo_prenda: str | None = None) -> list[TallaResponse]:
+    tallas = listar_tallas(tipo_prenda=tipo_prenda)
     return [construir_talla_response(t) for t in tallas]
 
 
@@ -267,15 +268,18 @@ def registrar_talla(
     direccion_ip: str | None = None,
     user_agent: str | None = None,
 ) -> TallaResponse:
-    if obtener_talla_por_nombre(request.nombre) is not None:
+    if obtener_talla_por_nombre_y_tipo(request.nombre, request.tipo_prenda) is not None:
         raise HTTPException(
             status_code=409,
-            detail="Ya existe una talla con ese nombre.",
+            detail=f"Ya existe una talla '{request.nombre.strip()}' para prendas tipo {request.tipo_prenda}.",
         )
 
     talla = crear_talla(
         nombre=request.nombre.strip(),
         descripcion=request.descripcion,
+        tipo_prenda=request.tipo_prenda,
+        ancho_cm=request.ancho_cm,
+        largo_cm=request.largo_cm,
     )
     registrar_bitacora(
         usuario_id=int(usuario_actual["id"]),
@@ -301,17 +305,20 @@ def editar_talla(
     if actual is None:
         raise HTTPException(status_code=404, detail="Talla no encontrada.")
 
-    existente = obtener_talla_por_nombre(request.nombre)
+    existente = obtener_talla_por_nombre_y_tipo(request.nombre, request.tipo_prenda)
     if existente is not None and int(existente["id"]) != talla_id:
         raise HTTPException(
             status_code=409,
-            detail="Ya existe otra talla con ese nombre.",
+            detail=f"Ya existe otra talla '{request.nombre.strip()}' para prendas tipo {request.tipo_prenda}.",
         )
 
     talla = actualizar_talla(
         talla_id=talla_id,
         nombre=request.nombre.strip(),
         descripcion=request.descripcion,
+        tipo_prenda=request.tipo_prenda,
+        ancho_cm=request.ancho_cm,
+        largo_cm=request.largo_cm,
     )
 
     if talla is None:
@@ -401,6 +408,9 @@ def construir_talla_response(talla: dict[str, object]) -> TallaResponse:
         id=int(talla["id"]),
         nombre=str(talla["nombre"]),
         descripcion=str(talla["descripcion"]) if talla["descripcion"] is not None else None,
+        tipo_prenda=str(talla.get("tipo_prenda", "SUPERIOR")),
+        ancho_cm=float(talla["ancho_cm"]) if talla.get("ancho_cm") is not None else None,
+        largo_cm=float(talla["largo_cm"]) if talla.get("largo_cm") is not None else None,
         activo=bool(talla["activo"]),
         fecha_creacion=talla["fecha_creacion"],
     )

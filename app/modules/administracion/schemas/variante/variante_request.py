@@ -7,6 +7,8 @@ class CrearVarianteRequest(BaseModel):
     talla_id: int | None = None
     color_id: int | None = None
     sku: str
+    ancho_cm: float | None = None
+    largo_cm: float | None = None
     
     @field_validator("sku")
     @classmethod
@@ -20,6 +22,8 @@ class ActualizarVarianteRequest(BaseModel):
     talla_id: int | None = None
     color_id: int | None = None
     sku: str
+    ancho_cm: float | None = None
+    largo_cm: float | None = None
 
     @field_validator("sku")
     @classmethod

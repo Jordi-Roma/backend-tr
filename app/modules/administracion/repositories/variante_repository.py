@@ -11,7 +11,7 @@ def listar_variantes(producto_id: int | None = None) -> list[dict[str, object]]:
             SELECT v.id, v.producto_id, p.nombre as producto_nombre,
                    v.talla_id, t.nombre as talla_nombre,
                    v.color_id, c.nombre as color_nombre,
-                   v.sku, v.activo, v.fecha_creacion
+                   v.sku, v.ancho_cm, v.largo_cm, v.activo, v.fecha_creacion
             FROM producto_variante v
             JOIN producto p ON v.producto_id = p.id
             LEFT JOIN talla t ON v.talla_id = t.id
@@ -45,7 +45,7 @@ def obtener_variante_por_id(variante_id: int) -> dict[str, object] | None:
             SELECT v.id, v.producto_id, p.nombre as producto_nombre,
                    v.talla_id, t.nombre as talla_nombre,
                    v.color_id, c.nombre as color_nombre,
-                   v.sku, v.activo, v.fecha_creacion
+                   v.sku, v.ancho_cm, v.largo_cm, v.activo, v.fecha_creacion
             FROM producto_variante v
             JOIN producto p ON v.producto_id = p.id
             LEFT JOIN talla t ON v.talla_id = t.id
@@ -79,18 +79,25 @@ def obtener_precios_de_variante(variante_id: int, cursor) -> list[dict[str, obje
     )
     return [dict(row) for row in cursor.fetchall()]
 
-def crear_variante(producto_id: int, talla_id: int | None, color_id: int | None, sku: str) -> int:
+def crear_variante(
+    producto_id: int,
+    talla_id: int | None,
+    color_id: int | None,
+    sku: str,
+    ancho_cm: float | None = None,
+    largo_cm: float | None = None,
+) -> int:
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=RealDictCursor)
 
     try:
         cursor.execute(
             """
-            INSERT INTO producto_variante (producto_id, talla_id, color_id, sku)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO producto_variante (producto_id, talla_id, color_id, sku, ancho_cm, largo_cm)
+            VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING id;
             """,
-            (producto_id, talla_id, color_id, sku),
+            (producto_id, talla_id, color_id, sku, ancho_cm, largo_cm),
         )
         variante_id = cursor.fetchone()["id"]
         connection.commit()
@@ -102,7 +109,14 @@ def crear_variante(producto_id: int, talla_id: int | None, color_id: int | None,
         cursor.close()
         connection.close()
 
-def actualizar_variante(variante_id: int, talla_id: int | None, color_id: int | None, sku: str) -> bool:
+def actualizar_variante(
+    variante_id: int,
+    talla_id: int | None,
+    color_id: int | None,
+    sku: str,
+    ancho_cm: float | None = None,
+    largo_cm: float | None = None,
+) -> bool:
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=RealDictCursor)
 
@@ -110,11 +124,11 @@ def actualizar_variante(variante_id: int, talla_id: int | None, color_id: int | 
         cursor.execute(
             """
             UPDATE producto_variante
-            SET talla_id = %s, color_id = %s, sku = %s
+            SET talla_id = %s, color_id = %s, sku = %s, ancho_cm = %s, largo_cm = %s
             WHERE id = %s
             RETURNING id;
             """,
-            (talla_id, color_id, sku, variante_id),
+            (talla_id, color_id, sku, ancho_cm, largo_cm, variante_id),
         )
         if cursor.fetchone() is None:
             connection.rollback()
