@@ -53,7 +53,11 @@ def registrar_producto(
         genero=request.genero.strip().upper() if request.genero else None,
         colecciones_ids=request.colecciones_ids,
         proveedores_ids=request.proveedores_ids,
-        imagenes=imagenes
+        imagenes=imagenes,
+        tipo_prenda=request.tipo_prenda,
+        tipo_corte=request.tipo_corte,
+        ancho_base_cm=request.ancho_base_cm,
+        largo_base_cm=request.largo_base_cm,
     )
 
     registrar_bitacora(
@@ -93,7 +97,11 @@ def editar_producto(
         genero=request.genero.strip().upper() if request.genero else None,
         colecciones_ids=request.colecciones_ids,
         proveedores_ids=request.proveedores_ids,
-        imagenes=imagenes
+        imagenes=imagenes,
+        tipo_prenda=request.tipo_prenda,
+        tipo_corte=request.tipo_corte,
+        ancho_base_cm=request.ancho_base_cm,
+        largo_base_cm=request.largo_base_cm,
     )
 
     if not actualizado:
@@ -117,8 +125,8 @@ def eliminar_producto(
     user_agent: str | None = None,
 ) -> MensajeResponse:
     actual = obtener_producto_por_id(producto_id)
-    if not actual or not actual["activo"]:
-        raise HTTPException(status_code=404, detail="Producto no encontrado o ya desactivado.")
+    if not actual:
+        raise HTTPException(status_code=404, detail="Producto no encontrado.")
 
     if not desactivar_producto(producto_id):
         raise HTTPException(status_code=404, detail="No se pudo desactivar el producto.")
@@ -181,6 +189,10 @@ def construir_producto_response(producto: dict[str, object]) -> ProductoResponse
         descripcion=str(producto["descripcion"]) if producto["descripcion"] else None,
         material=str(producto["material"]) if producto["material"] else None,
         genero=str(producto["genero"]) if producto["genero"] else None,
+        tipo_prenda=str(producto.get("tipo_prenda") or "SUPERIOR"),
+        tipo_corte=str(producto.get("tipo_corte") or "REGULAR_FIT"),
+        ancho_base_cm=float(producto.get("ancho_base_cm") or 53.0),
+        largo_base_cm=float(producto.get("largo_base_cm") or 72.0),
         activo=bool(producto["activo"]),
         fecha_creacion=producto["fecha_creacion"],
         colecciones_ids=list(producto["colecciones_ids"]),

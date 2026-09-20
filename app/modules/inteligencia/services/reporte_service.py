@@ -7,8 +7,19 @@ from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException
 
-from app.modules.inteligencia.repositories.reporte_repository import consultar_reporte, listar_sucursales
-from app.modules.inteligencia.schemas.reportes.reporte_request import ReporteRequest
+from app.modules.inteligencia.repositories.reporte_repository import (
+    actualizar_estado_reporte_programado,
+    consultar_reporte,
+    crear_reporte_programado,
+    eliminar_reporte_programado,
+    listar_reportes_programados,
+    listar_sucursales,
+    marcar_ejecucion_reporte_programado,
+)
+from app.modules.inteligencia.schemas.reportes.reporte_request import (
+    CrearReporteProgramadoRequest,
+    ReporteRequest,
+)
 
 TITULOS = {
     "VENTAS": "Ventas presenciales",
@@ -134,4 +145,58 @@ def generar_reporte(request: ReporteRequest) -> dict[str, object]:
         "filas": filas,
         "total_filas": len(filas),
         "sin_datos": not filas,
+    }
+
+
+def _presentar_programado(item: dict[str, object]) -> dict[str, object]:
+    return {
+        **item,
+        "creado_en": item["creado_en"].astimezone(ZoneInfo("America/La_Paz")).isoformat() if item.get("creado_en") else None,
+        "ultima_ejecucion": item["ultima_ejecucion"].astimezone(ZoneInfo("America/La_Paz")).isoformat() if item.get("ultima_ejecucion") else None,
+        "proxima_ejecucion": item["proxima_ejecucion"].astimezone(ZoneInfo("America/La_Paz")).isoformat() if item.get("proxima_ejecucion") else None,
+    }
+
+
+def listar_programados_service() -> list[dict[str, object]]:
+    return [_presentar_programado(item) for item in listar_reportes_programados()]
+
+
+def crear_programado_service(request: CrearReporteProgramadoRequest, usuario_actual: dict[str, object]) -> dict[str, object]:
+    usuario_id = int(usuario_actual["id"]) if "id" in usuario_actual else None
+    item = crear_reporte_programado(request.model_dump(), usuario_id)
+    return _presentar_programado(item)
+
+
+def actualizar_estado_programado_service(programado_id: int, activo: bool) -> dict[str, object]:
+    item = actualizar_estado_reporte_programado(programado_id, activo)
+    if not item:
+        raise HTTPException(status_code=404, detail="Programación de reporte no encontrada.")
+    return _presentar_programado(item)
+
+
+def eliminar_programado_service(programado_id: int) -> dict[str, str]:
+    ok = eliminar_reporte_programado(programado_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Programación de reporte no encontrada.")
+    return {"status": "ok", "mensaje": "Programación eliminada exitosamente."}
+
+
+def ejecutar_programado_service(programado_id: int) -> dict[str, object]:
+    item = marcar_ejecucion_reporte_programado(programado_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Programación de reporte no encontrada.")
+    hoy = datetime.now(ZoneInfo("America/La_Paz")).date()
+    desde = hoy - timedelta(days=30)
+    rep_req = ReporteRequest(
+        tipo=item["tipo"],
+        fecha_desde=desde,
+        fecha_hasta=hoy,
+        sucursal_id=item.get("sucursal_id"),
+        solo_bajo_stock=item.get("solo_bajo_stock", False),
+    )
+    resultado = generar_reporte(rep_req)
+    return {
+        "programado": _presentar_programado(item),
+        "reporte": resultado,
+        "mensaje": f"Reporte '{item['titulo']}' ejecutado exitosamente para {item['destinatario_email']} ({item['formato']}).",
     }

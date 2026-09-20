@@ -89,3 +89,88 @@ def consultar_reporte(request: ReporteRequest) -> list[dict[str, object]]:
           AND (%s::bigint IS NULL OR t.sucursal_origen_id = %s OR t.sucursal_destino_id = %s)
         ORDER BY t.fecha_transferencia DESC LIMIT 5000
     """, (desde, hasta, sucursal, sucursal, sucursal))
+
+
+def listar_reportes_programados() -> list[dict[str, object]]:
+    return _rows("""
+        SELECT rp.id, rp.titulo, rp.tipo, rp.frecuencia, rp.hora, rp.dia,
+               rp.formato, rp.destinatario_email, rp.sucursal_id, s.nombre AS sucursal_nombre,
+               rp.solo_bajo_stock, rp.activo, rp.ultima_ejecucion, rp.proxima_ejecucion, rp.creado_en
+        FROM reporte_programado rp
+        LEFT JOIN sucursal s ON s.id = rp.sucursal_id
+        ORDER BY rp.creado_en DESC
+    """, ())
+
+
+def crear_reporte_programado(data: dict[str, object], usuario_id: int | None = None) -> dict[str, object]:
+    connection = get_connection()
+    try:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute("""
+                INSERT INTO reporte_programado (
+                    titulo, tipo, frecuencia, hora, dia, formato,
+                    destinatario_email, sucursal_id, solo_bajo_stock, activo, creado_por
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id, titulo, tipo, frecuencia, hora, dia, formato,
+                          destinatario_email, sucursal_id, solo_bajo_stock, activo,
+                          ultima_ejecucion, proxima_ejecucion, creado_en
+            """, (
+                data["titulo"], data["tipo"], data["frecuencia"], data.get("hora", "08:00"),
+                data.get("dia"), data.get("formato", "PDF"), data["destinatario_email"],
+                data.get("sucursal_id"), data.get("solo_bajo_stock", False), data.get("activo", True),
+                usuario_id
+            ))
+            row = cursor.fetchone()
+            connection.commit()
+            return dict(row)
+    finally:
+        connection.close()
+
+
+def actualizar_estado_reporte_programado(programado_id: int, activo: bool) -> dict[str, object] | None:
+    connection = get_connection()
+    try:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute("""
+                UPDATE reporte_programado
+                SET activo = %s
+                WHERE id = %s
+                RETURNING id, titulo, tipo, frecuencia, hora, dia, formato,
+                          destinatario_email, sucursal_id, solo_bajo_stock, activo,
+                          ultima_ejecucion, proxima_ejecucion, creado_en
+            """, (activo, programado_id))
+            row = cursor.fetchone()
+            connection.commit()
+            return dict(row) if row else None
+    finally:
+        connection.close()
+
+
+def eliminar_reporte_programado(programado_id: int) -> bool:
+    connection = get_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("DELETE FROM reporte_programado WHERE id = %s", (programado_id,))
+            connection.commit()
+            return cursor.rowcount > 0
+    finally:
+        connection.close()
+
+
+def marcar_ejecucion_reporte_programado(programado_id: int) -> dict[str, object] | None:
+    connection = get_connection()
+    try:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute("""
+                UPDATE reporte_programado
+                SET ultima_ejecucion = NOW()
+                WHERE id = %s
+                RETURNING id, titulo, tipo, frecuencia, hora, dia, formato,
+                          destinatario_email, sucursal_id, solo_bajo_stock, activo,
+                          ultima_ejecucion, proxima_ejecucion, creado_en
+            """, (programado_id,))
+            row = cursor.fetchone()
+            connection.commit()
+            return dict(row) if row else None
+    finally:
+        connection.close()

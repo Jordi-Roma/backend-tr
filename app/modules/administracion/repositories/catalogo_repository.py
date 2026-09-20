@@ -261,18 +261,22 @@ def contar_productos_activos_por_categoria(categoria_id: int) -> int:
 # TALLAS
 # ═══════════════════════════════════════════════════════════════════════════
 
-def listar_tallas() -> list[dict[str, object]]:
+def listar_tallas(tipo_prenda: str | None = None) -> list[dict[str, object]]:
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=RealDictCursor)
 
     try:
-        cursor.execute(
-            """
-            SELECT id, nombre, descripcion, activo, fecha_creacion
+        query = """
+            SELECT id, nombre, descripcion, tipo_prenda, ancho_cm, largo_cm, activo, fecha_creacion
             FROM talla
-            ORDER BY nombre ASC;
-            """
-        )
+        """
+        params = []
+        if tipo_prenda is not None:
+            query += " WHERE tipo_prenda = %s "
+            params.append(tipo_prenda.strip().upper())
+            
+        query += " ORDER BY tipo_prenda ASC, id ASC;"
+        cursor.execute(query, tuple(params))
         return [dict(t) for t in cursor.fetchall()]
     finally:
         cursor.close()
@@ -286,7 +290,7 @@ def obtener_talla_por_id(talla_id: int) -> dict[str, object] | None:
     try:
         cursor.execute(
             """
-            SELECT id, nombre, descripcion, activo, fecha_creacion
+            SELECT id, nombre, descripcion, tipo_prenda, ancho_cm, largo_cm, activo, fecha_creacion
             FROM talla
             WHERE id = %s
             LIMIT 1;
@@ -307,7 +311,7 @@ def obtener_talla_por_nombre(nombre: str) -> dict[str, object] | None:
     try:
         cursor.execute(
             """
-            SELECT id, nombre
+            SELECT id, nombre, tipo_prenda
             FROM talla
             WHERE lower(nombre) = lower(%s)
             LIMIT 1;
@@ -321,9 +325,33 @@ def obtener_talla_por_nombre(nombre: str) -> dict[str, object] | None:
         connection.close()
 
 
+def obtener_talla_por_nombre_y_tipo(nombre: str, tipo_prenda: str) -> dict[str, object] | None:
+    connection = get_connection()
+    cursor = connection.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        cursor.execute(
+            """
+            SELECT id, nombre, tipo_prenda
+            FROM talla
+            WHERE lower(nombre) = lower(%s) AND tipo_prenda = %s
+            LIMIT 1;
+            """,
+            (nombre, tipo_prenda.strip().upper()),
+        )
+        row = cursor.fetchone()
+        return dict(row) if row is not None else None
+    finally:
+        cursor.close()
+        connection.close()
+
+
 def crear_talla(
     nombre: str,
     descripcion: str | None,
+    tipo_prenda: str = "SUPERIOR",
+    ancho_cm: float | None = None,
+    largo_cm: float | None = None,
 ) -> dict[str, object]:
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=RealDictCursor)
@@ -331,11 +359,11 @@ def crear_talla(
     try:
         cursor.execute(
             """
-            INSERT INTO talla (nombre, descripcion)
-            VALUES (%s, %s)
-            RETURNING id, nombre, descripcion, activo, fecha_creacion;
+            INSERT INTO talla (nombre, descripcion, tipo_prenda, ancho_cm, largo_cm)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id, nombre, descripcion, tipo_prenda, ancho_cm, largo_cm, activo, fecha_creacion;
             """,
-            (nombre, descripcion),
+            (nombre, descripcion, tipo_prenda.strip().upper(), ancho_cm, largo_cm),
         )
         row = cursor.fetchone()
         connection.commit()
@@ -352,6 +380,9 @@ def actualizar_talla(
     talla_id: int,
     nombre: str,
     descripcion: str | None,
+    tipo_prenda: str = "SUPERIOR",
+    ancho_cm: float | None = None,
+    largo_cm: float | None = None,
 ) -> dict[str, object] | None:
     connection = get_connection()
     cursor = connection.cursor(cursor_factory=RealDictCursor)
@@ -361,11 +392,14 @@ def actualizar_talla(
             """
             UPDATE talla
             SET nombre = %s,
-                descripcion = %s
+                descripcion = %s,
+                tipo_prenda = %s,
+                ancho_cm = %s,
+                largo_cm = %s
             WHERE id = %s
-            RETURNING id, nombre, descripcion, activo, fecha_creacion;
+            RETURNING id, nombre, descripcion, tipo_prenda, ancho_cm, largo_cm, activo, fecha_creacion;
             """,
-            (nombre, descripcion, talla_id),
+            (nombre, descripcion, tipo_prenda.strip().upper(), ancho_cm, largo_cm, talla_id),
         )
         row = cursor.fetchone()
 

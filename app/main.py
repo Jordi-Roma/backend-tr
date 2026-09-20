@@ -11,6 +11,9 @@ from app.modules.administracion.router.catalogo_router import (
 from app.modules.catalogo.router.catalogo_publico_router import (
     router as catalogo_publico_router,
 )
+from app.modules.catalogo.vestidor.vestidor_router import (
+    router as vestidor_router,
+)
 from app.modules.administracion.router.empleado_router import (
     router as empleado_router,
 )
@@ -73,6 +76,7 @@ app.include_router(ciudad_sucursal_router)
 app.include_router(empleado_router)
 app.include_router(proveedor_router)
 app.include_router(catalogo_publico_router)
+app.include_router(vestidor_router)
 app.include_router(catalogo_router)
 app.include_router(temporada_router)
 app.include_router(coleccion_router)
@@ -86,6 +90,11 @@ app.include_router(bitacora_router)
 app.include_router(reporte_router)
 app.include_router(recomendacion_router)
 app.include_router(asistente_router)
+
+from fastapi.staticfiles import StaticFiles
+import os
+os.makedirs("static/images", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/api/v1/health")
@@ -105,3 +114,18 @@ def db_check() -> dict[str, str]:
         "status": "ok",
         "database": "connected",
     }
+
+
+@app.get("/api/v1/descargar-apk")
+def descargar_apk():
+    import os
+    from fastapi.responses import FileResponse
+    apk_path = r"c:\MATERIAS\SI2\PrimerParcial\mobile_tr\build\app\outputs\flutter-apk\app-release.apk"
+    if os.path.exists(apk_path):
+        return FileResponse(
+            apk_path,
+            media_type="application/vnd.android.package-archive",
+            filename="tienda-ropa-release.apk",
+        )
+    return {"error": "APK no encontrado o aún en compilación"}
+

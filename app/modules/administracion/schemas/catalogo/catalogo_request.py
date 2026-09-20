@@ -60,6 +60,9 @@ class ActualizarCategoriaRequest(BaseModel):
 class CrearTallaRequest(BaseModel):
     nombre: str
     descripcion: str | None = None
+    tipo_prenda: str = "SUPERIOR"
+    ancho_cm: float | None = None
+    largo_cm: float | None = None
 
     @field_validator("nombre")
     @classmethod
@@ -84,6 +87,9 @@ class CrearTallaRequest(BaseModel):
 class ActualizarTallaRequest(BaseModel):
     nombre: str
     descripcion: str | None = None
+    tipo_prenda: str = "SUPERIOR"
+    ancho_cm: float | None = None
+    largo_cm: float | None = None
 
     @field_validator("nombre")
     @classmethod

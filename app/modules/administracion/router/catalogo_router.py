@@ -118,9 +118,10 @@ def activar_categoria_endpoint(
 
 @router.get("/tallas", response_model=list[TallaResponse])
 def listar_tallas_endpoint(
+    tipo_prenda: str | None = None,
     usuario_actual: dict[str, object] = Depends(requerir_admin),
 ) -> list[TallaResponse]:
-    return obtener_tallas()
+    return obtener_tallas(tipo_prenda=tipo_prenda)
 
 
 @router.post("/tallas", response_model=TallaResponse)
